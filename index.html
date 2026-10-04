@@ -1,0 +1,2380 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agenda Virtual de Reservas Gratis — Tutorial interactivo V006</title>
+<style>
+/* ============================================================
+   VARIABLES Y BASE
+   ============================================================ */
+:root{
+  --bg:#0a0e1a;
+  --card:#0f172a;
+  --card2:#0b1220;
+  --accent:#1e3a5f;
+  --accent2:#38bdf8;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --border:#1e293b;
+  --ok:#22c55e;
+  --warn:#f59e0b;
+  --err:#ef4444;
+  --radius:14px;
+  --maxw:1080px;
+}
+body.light{
+  --bg:#eef2f7;
+  --card:#ffffff;
+  --card2:#f8fafc;
+  --accent:#1e3a5f;
+  --accent2:#0369a1;
+  --text:#0f172a;
+  --muted:#475569;
+  --border:#cbd5e1;
+}
+*{box-sizing:border-box}
+html{font-size:16px;scroll-behavior:smooth}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:1rem;
+  line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+  transition:background .25s ease,color .25s ease;
+}
+img,svg{max-width:100%}
+a{color:var(--accent2)}
+
+/* ============================================================
+   BARRA DE PROGRESO
+   ============================================================ */
+.progress-wrap{
+  position:fixed;top:0;left:0;right:0;height:4px;z-index:100;
+  background:transparent;pointer-events:none;
+}
+.progress-bar{
+  height:100%;width:0%;
+  background:linear-gradient(90deg,#38bdf8,#22c55e);
+  transition:width .1s linear;
+}
+
+/* ============================================================
+   TOOLBAR
+   ============================================================ */
+.toolbar{
+  position:sticky;top:0;z-index:90;
+  background:color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--border);
+  padding:8px 12px;
+}
+@supports not (background: color-mix(in srgb, red, blue)){
+  .toolbar{background:var(--bg)}
+}
+.toolbar-inner{
+  max-width:var(--maxw);margin:0 auto;
+  display:flex;flex-wrap:wrap;gap:8px;align-items:center;
+}
+.search-box{
+  flex:1 1 180px;min-width:140px;position:relative;
+}
+.search-box input{
+  width:100%;padding:9px 12px;border-radius:10px;
+  border:1px solid var(--border);background:var(--card);
+  color:var(--text);font-size:.9rem;font-family:inherit;
+}
+.search-box input:focus{outline:2px solid var(--accent2);outline-offset:1px}
+.search-count{font-size:.75rem;color:var(--muted);white-space:nowrap}
+.btn{
+  border:1px solid var(--border);
+  background:var(--card);
+  color:var(--text);
+  padding:8px 11px;
+  border-radius:10px;
+  font-size:.85rem;
+  font-family:inherit;
+  cursor:pointer;
+  transition:.18s;
+  white-space:nowrap;
+  line-height:1;
+}
+.btn:hover{border-color:var(--accent2);color:var(--accent2)}
+.btn:active{transform:scale(.96)}
+.btn.small{padding:6px 9px;font-size:.78rem}
+
+/* ============================================================
+   LAYOUT
+   ============================================================ */
+.wrap{max-width:var(--maxw);margin:0 auto;padding:16px 14px 90px}
+
+/* HERO SVG */
+.svg-hero{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:10px;
+  margin-bottom:18px;
+  overflow:hidden;
+}
+.svg-hero svg{display:block;width:100%;height:auto}
+.hero-svg-mount{display:block;width:100%;}
+.hero-svg-mount svg{display:block;width:100%;height:auto}
+.hero-svg-mount img{display:block;width:100%;height:auto}
+
+/* SVG en créditos (mismo comportamiento) */
+.svg-credits{display:block}
+.svg-credits svg{display:block;width:100%;height:auto}
+
+/* TABS */
+.tabs{
+  display:flex;gap:6px;overflow-x:auto;
+  padding:4px 2px 10px;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:thin;
+}
+.tabs::-webkit-scrollbar{height:5px}
+.tabs::-webkit-scrollbar-thumb{background:var(--accent);border-radius:4px}
+.tab{
+  border:1px solid var(--border);
+  background:var(--card);
+  color:var(--muted);
+  padding:9px 15px;
+  border-radius:999px;
+  font-size:.82rem;
+  font-weight:600;
+  letter-spacing:.03em;
+  cursor:pointer;
+  white-space:nowrap;
+  transition:.18s;
+  font-family:inherit;
+}
+.tab:hover{color:var(--text);border-color:var(--accent2)}
+.tab.active{
+  background:var(--accent);
+  border-color:var(--accent2);
+  color:#fff;
+  box-shadow:0 0 0 1px var(--accent2) inset;
+}
+
+/* PANELES */
+.panel{display:none;animation:fade .3s ease}
+.panel.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ============================================================
+   TIPOGRAFÍA
+   ============================================================ */
+h1{font-size:1.85rem;line-height:1.2;margin:.2em 0 .35em}
+h2{
+  font-size:1.4rem;margin:1.8em 0 .6em;
+  padding-bottom:.3em;border-bottom:1px solid var(--border);
+}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+h4{font-size:.98rem;margin:1.1em 0 .4em;color:var(--accent2);text-transform:uppercase;letter-spacing:.05em}
+p{margin:.6em 0}
+ul,ol{padding-left:1.35em;margin:.5em 0}
+li{margin:.32em 0}
+code{
+  background:var(--card2);border:1px solid var(--border);
+  padding:1px 6px;border-radius:6px;font-size:.87em;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  color:#7dd3fc;word-break:break-word;
+}
+body.light code{color:#0c4a6e}
+pre{
+  background:var(--card2);border:1px solid var(--border);
+  border-radius:10px;padding:12px 14px;overflow-x:auto;
+  font-size:.85rem;line-height:1.5;
+}
+pre code{background:none;border:none;padding:0;color:#7dd3fc}
+body.light pre code{color:#0c4a6e}
+
+/* ============================================================
+   COMPONENTES
+   ============================================================ */
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:16px 16px;
+  margin:14px 0;
+}
+.card.accent{border-left:4px solid var(--accent2)}
+.card.ok{border-left:4px solid var(--ok)}
+.card.warn{border-left:4px solid var(--warn)}
+.card.err{border-left:4px solid var(--err)}
+
+.grid{display:grid;gap:12px;grid-template-columns:1fr}
+@media(min-width:640px){.grid.two{grid-template-columns:1fr 1fr}.grid.three{grid-template-columns:repeat(3,1fr)}}
+
+.pill{
+  display:inline-block;font-size:.72rem;font-weight:700;
+  padding:3px 9px;border-radius:999px;letter-spacing:.04em;
+  background:var(--accent);color:#cfe6ff;border:1px solid var(--accent2);
+}
+.pill.ok{background:#052e16;color:#86efac;border-color:#22c55e}
+.pill.warn{background:#3b2404;color:#fcd34d;border-color:#f59e0b}
+.pill.err{background:#3b0a0a;color:#fca5a5;border-color:#ef4444}
+body.light .pill{background:#e0f2fe;color:#0c4a6e;border-color:#0369a1}
+body.light .pill.ok{background:#dcfce7;color:#166534;border-color:#16a34a}
+body.light .pill.warn{background:#fef3c7;color:#92400e;border-color:#d97706}
+body.light .pill.err{background:#fee2e2;color:#991b1b;border-color:#dc2626}
+
+table{
+  width:100%;border-collapse:collapse;margin:12px 0;
+  font-size:.88rem;border-radius:10px;overflow:hidden;
+}
+th{
+  background:var(--accent);color:#e6f2ff;text-align:left;
+  padding:9px 10px;font-size:.8rem;letter-spacing:.04em;text-transform:uppercase;
+}
+td{padding:9px 10px;border-top:1px solid var(--border);vertical-align:top}
+tbody tr:nth-child(even){background:var(--card2)}
+
+/* PASOS */
+.stepcard{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius);margin:18px 0;overflow:hidden;
+}
+.stepcard-head{
+  display:flex;align-items:center;gap:12px;
+  padding:14px 16px;background:var(--accent);
+}
+.stepcard-head h3{margin:0;font-size:1.05rem;color:#fff}
+.stepnum{
+  flex:0 0 34px;height:34px;border-radius:50%;
+  background:var(--accent2);color:#04121f;font-weight:800;
+  display:flex;align-items:center;justify-content:center;font-size:.95rem;
+}
+.stepcard-body{padding:14px 16px 18px}
+.objetivo{
+  background:var(--card2);border-left:3px solid var(--accent2);
+  padding:9px 12px;border-radius:0 8px 8px 0;font-size:.92rem;margin:.4em 0 .8em;
+}
+.resultado{
+  background:#052e16;border:1px solid #166534;color:#bbf7d0;
+  padding:10px 12px;border-radius:10px;font-size:.9rem;margin:12px 0 0;
+}
+body.light .resultado{background:#dcfce7;color:#14532d;border-color:#16a34a}
+.sifalla{
+  background:#3b0a0a;border:1px solid #7f1d1d;color:#fecaca;
+  padding:10px 12px;border-radius:10px;font-size:.9rem;margin:10px 0 0;
+}
+body.light .sifalla{background:#fee2e2;color:#7f1d1d;border-color:#dc2626}
+.pasos{counter-reset:none;padding-left:0;list-style:none;margin:.6em 0}
+.pasos li{
+  position:relative;padding:8px 0 8px 40px;border-bottom:1px dashed var(--border);
+}
+.pasos li:last-child{border-bottom:none}
+.pasos li::before{
+  counter-increment:paso;
+  content:counter(paso);
+  position:absolute;left:0;top:9px;
+  width:26px;height:26px;border-radius:8px;
+  background:var(--accent);color:#cfe6ff;
+  font-size:.78rem;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+}
+.pasos{counter-reset:paso}
+.motivo{display:block;font-size:.85rem;color:var(--muted);margin-top:3px}
+
+/* ACORDEONES */
+.acc{
+  border:1px solid var(--border);border-radius:12px;
+  margin:10px 0;overflow:hidden;background:var(--card);
+}
+.acc-head{
+  width:100%;text-align:left;background:none;border:none;
+  color:var(--text);font-family:inherit;font-size:.95rem;font-weight:600;
+  padding:13px 44px 13px 14px;cursor:pointer;position:relative;
+}
+.acc-head::after{
+  content:"+";position:absolute;right:15px;top:50%;transform:translateY(-50%);
+  font-size:1.25rem;color:var(--accent2);font-weight:400;transition:.2s;
+}
+.acc.open .acc-head::after{content:"−"}
+.acc-body{display:none;padding:0 14px 14px;font-size:.92rem;color:var(--text)}
+.acc.open .acc-body{display:block}
+
+/* CHECKLIST */
+.check-item{
+  display:flex;gap:10px;align-items:flex-start;
+  padding:9px 11px;border:1px solid var(--border);border-radius:10px;
+  margin:7px 0;background:var(--card);cursor:pointer;font-size:.92rem;
+}
+.check-item input{
+  margin-top:4px;width:18px;height:18px;accent-color:#22c55e;cursor:pointer;flex:0 0 auto;
+}
+.check-item.done span{text-decoration:line-through;color:var(--muted)}
+
+/* COPY */
+.copyRow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0}
+.copyRow code{flex:1 1 200px}
+
+/* BOTÓN ARRIBA */
+.to-top{
+  position:fixed;right:16px;bottom:16px;z-index:80;
+  width:46px;height:46px;border-radius:50%;
+  background:var(--accent);color:#cfe6ff;border:1px solid var(--accent2);
+  font-size:1.2rem;cursor:pointer;display:none;
+  align-items:center;justify-content:center;
+  box-shadow:0 6px 18px rgba(0,0,0,.35);
+}
+.to-top.show{display:flex}
+
+/* DIAGRAMA */
+.diagram{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius);padding:12px;margin:14px 0;
+}
+.diagram svg{display:block;width:100%;height:auto}
+
+/* AVISOS */
+.hint{
+  font-size:.85rem;color:var(--muted);
+  border-left:3px solid var(--accent2);padding:6px 10px;margin:10px 0;
+}
+.print-header{display:none}
+.search-hl{background:#facc15;color:#000;border-radius:3px;padding:0 1px}
+.print-warn{display:none}
+.print-warn.show{display:block}
+
+/* ENLACES DE FUENTES */
+.resource-link{
+  display:inline-block;word-break:break-all;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:.88rem;background:var(--card2);border:1px solid var(--border);
+  padding:8px 12px;border-radius:10px;margin:4px 0;text-decoration:none;
+  color:var(--accent2);transition:.18s;
+}
+.resource-link:hover{border-color:var(--accent2);background:var(--accent)}
+
+/* ============================================================
+   CRÉDITOS
+   ============================================================ */
+.credit-name{
+  font-size:2.4rem;font-weight:800;line-height:1.1;
+  background:linear-gradient(90deg,#38bdf8,#22c55e);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  margin:.1em 0;
+}
+.credit-role{font-size:1.05rem;color:var(--muted);margin:0 0 1em;font-weight:600}
+.credit-date{
+  display:inline-block;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:1rem;background:var(--card2);border:1px solid var(--border);
+  padding:10px 16px;border-radius:10px;letter-spacing:.05em;
+}
+
+/* ============================================================
+   IMPRESIÓN  (reglas obligatorias)
+   ============================================================ */
+@page{size:A4 portrait;margin:14mm 12mm}
+
+@media print{
+  html,body{
+    background:#fff !important;color:#000 !important;
+    padding:0 !important;margin:0 !important;font-size:11pt !important;
+  }
+  html{font-size:11pt !important}
+  .toolbar,.tabs,.to-top,.copyBtn,.progress-wrap,.svg-hero,nav,.search-hl,.no-print{
+    display:none !important;
+  }
+  .print-header{
+    display:block !important;border-bottom:2px solid #000;
+    margin-bottom:12px;padding-bottom:6px;
+  }
+  .print-header h1{font-size:15pt;margin:0}
+  .print-header p{margin:2px 0 0;font-size:9pt;color:#333}
+
+  .panel{
+    display:block !important;
+    page-break-after:auto !important;
+    animation:none !important;
+  }
+  .wrap{max-width:100% !important;padding:0 !important;margin:0 !important}
+
+  *{
+    box-shadow:none !important;text-shadow:none !important;
+    -webkit-print-color-adjust:exact !important;
+    print-color-adjust:exact !important;
+  }
+  .card,.stepcard,.acc,.acc-body,.objetivo,.resultado,.sifalla,.check-item,
+  table,.diagram,.pill,pre,.credit-date,.resource-link{
+    border:1px solid #666 !important;
+    background:#fff !important;
+    color:#000 !important;
+    break-inside:avoid;
+  }
+  .stepcard-head{background:#e5e7eb !important;color:#000 !important;border-bottom:1px solid #666 !important}
+  .stepcard-head h3{color:#000 !important}
+  .stepnum{background:#000 !important;color:#fff !important}
+  th{background:#e5e7eb !important;color:#000 !important;border:1px solid #666 !important}
+  td{border:1px solid #999 !important;background:#fff !important;color:#000 !important}
+  tbody tr:nth-child(even){background:#f5f5f5 !important}
+
+  pre,code{
+    white-space:pre-wrap !important;
+    word-wrap:break-word !important;
+    overflow:visible !important;
+    color:#000 !important;
+    background:#fff !important;
+    border:1px solid #999 !important;
+  }
+  .acc-body{display:block !important;max-height:none !important;overflow:visible !important}
+  .acc-head::after{display:none !important}
+  .pill{background:#eee !important;color:#000 !important;border:1px solid #666 !important}
+  .credit-name{
+    color:#000 !important;
+    -webkit-text-fill-color:#000 !important;
+    background:none !important;
+  }
+  .check-item input[type=checkbox]{
+    -webkit-appearance:none;appearance:none;
+    width:12px;height:12px;border:1px solid #000;display:inline-block;position:relative;
+  }
+  .check-item input[type=checkbox]:checked::after{
+    content:"✓";position:absolute;left:0;top:-4px;font-size:12px;font-weight:700;color:#000;
+  }
+  h1,h2,h3,h4{break-after:avoid;color:#000 !important}
+  a{color:#000 !important;text-decoration:underline}
+  .svg-credits{display:block !important;page-break-inside:avoid}
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     SVG ÚNICO REUTILIZABLE (definido UNA sola vez)
+     Se usa un <g id="svgHero"> dentro de <defs> porque las
+     animaciones SMIL se conservan de forma más fiable en todas
+     las instancias creadas con <use> (incluida la de CRÉDITOS).
+     ============================================================ -->
+<svg id="svgHeroSource" width="0" height="0" style="position:absolute;overflow:hidden" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="gBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1e3a5f"/>
+    </linearGradient>
+    <linearGradient id="gAcc" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#22c55e"/>
+    </linearGradient>
+    <filter id="fGlow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="3" result="b"/>
+      <feMerge>
+        <feMergeNode in="b"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <g id="svgHero">
+      <!-- Fondo -->
+      <rect x="0" y="0" width="820" height="260" rx="18" fill="url(#gBg)"/>
+      <g opacity="0.07" stroke="#93c5fd" stroke-width="1">
+        <path d="M0 65 H820 M0 130 H820 M0 195 H820 M205 0 V260 M410 0 V260 M615 0 V260"/>
+      </g>
+
+      <!-- Teléfono del cliente -->
+      <g>
+        <animateTransform attributeName="transform" type="translate"
+          values="0 0; 0 -5; 0 0" dur="4s" repeatCount="indefinite"/>
+        <rect x="50" y="52" width="112" height="176" rx="16" fill="#0b1220" stroke="#38bdf8" stroke-width="2"/>
+        <rect x="61" y="72" width="90" height="126" rx="10" fill="#111c33"/>
+        <rect x="96" y="60" width="20" height="4" rx="2" fill="#1e3a5f"/>
+        <rect x="71" y="84" width="70" height="7" rx="3.5" fill="#1e3a5f"/>
+        <rect x="71" y="98" width="52" height="7" rx="3.5" fill="#1e3a5f"/>
+        <rect x="71" y="112" width="62" height="7" rx="3.5" fill="#1e3a5f"/>
+        <rect x="71" y="140" width="70" height="22" rx="6" fill="#22c55e" opacity="0.85">
+          <animate attributeName="opacity" values="0.85;0.3;0.85" dur="2.2s" repeatCount="indefinite"/>
+        </rect>
+        <rect x="71" y="170" width="70" height="22" rx="6" fill="#1e3a5f"/>
+      </g>
+
+      <!-- Línea de conexión animada -->
+      <path d="M178 140 H300" stroke="#38bdf8" stroke-width="2" fill="none"
+            stroke-dasharray="9 9" opacity="0.75">
+        <animate attributeName="stroke-dashoffset" values="0;-36" dur="1.4s" repeatCount="indefinite"/>
+      </path>
+      <path d="M296 134 l10 6 l-10 6 z" fill="#38bdf8" opacity="0.85">
+        <animate attributeName="opacity" values="0.85;0.25;0.85" dur="1.4s" repeatCount="indefinite"/>
+      </path>
+
+      <!-- Calendario / agenda -->
+      <g>
+        <rect x="318" y="38" width="304" height="184" rx="16" fill="#0b1220" stroke="#38bdf8" stroke-width="2"/>
+        <path d="M318 54 a16 16 0 0 1 16 -16 h272 a16 16 0 0 1 16 16 v22 h-304 z" fill="#1e3a5f"/>
+        <circle cx="340" cy="57" r="4" fill="#38bdf8">
+          <animate attributeName="r" values="4;6.5;4" dur="2s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="1;0.5;1" dur="2s" repeatCount="indefinite"/>
+        </circle>
+        <rect x="354" y="53" width="92" height="8" rx="4" fill="#93c5fd" opacity="0.7"/>
+        <rect x="560" y="53" width="46" height="8" rx="4" fill="#93c5fd" opacity="0.4"/>
+
+        <!-- Rejilla de franjas horarias -->
+        <g fill="#16233d">
+          <rect x="360" y="92"  width="30" height="22" rx="5"/>
+          <rect x="398" y="92"  width="30" height="22" rx="5"/>
+          <rect x="436" y="92"  width="30" height="22" rx="5"/>
+          <rect x="474" y="92"  width="30" height="22" rx="5"/>
+          <rect x="512" y="92"  width="30" height="22" rx="5"/>
+          <rect x="550" y="92"  width="30" height="22" rx="5"/>
+
+          <rect x="360" y="122" width="30" height="22" rx="5"/>
+          <rect x="398" y="122" width="30" height="22" rx="5"/>
+          <rect x="474" y="122" width="30" height="22" rx="5"/>
+          <rect x="512" y="122" width="30" height="22" rx="5"/>
+          <rect x="550" y="122" width="30" height="22" rx="5"/>
+
+          <rect x="360" y="152" width="30" height="22" rx="5"/>
+          <rect x="398" y="152" width="30" height="22" rx="5"/>
+          <rect x="436" y="152" width="30" height="22" rx="5"/>
+          <rect x="512" y="152" width="30" height="22" rx="5"/>
+          <rect x="550" y="152" width="30" height="22" rx="5"/>
+
+          <rect x="360" y="182" width="30" height="22" rx="5"/>
+          <rect x="436" y="182" width="30" height="22" rx="5"/>
+          <rect x="474" y="182" width="30" height="22" rx="5"/>
+          <rect x="512" y="182" width="30" height="22" rx="5"/>
+          <rect x="550" y="182" width="30" height="22" rx="5"/>
+        </g>
+
+        <!-- Franjas ya ocupadas -->
+        <g fill="#1e3a5f">
+          <rect x="474" y="92"  width="30" height="22" rx="5"/>
+          <rect x="398" y="152" width="30" height="22" rx="5"/>
+          <rect x="474" y="182" width="30" height="22" rx="5"/>
+        </g>
+
+        <!-- Franja que se reserva (destino) -->
+        <rect x="436" y="122" width="30" height="22" rx="5" fill="#16233d">
+          <animate attributeName="fill"
+            values="#16233d;#16233d;#22c55e;#22c55e;#16233d"
+            keyTimes="0;0.36;0.46;0.9;1"
+            dur="6s" repeatCount="indefinite"/>
+        </rect>
+
+        <!-- La "cita" viajando desde el móvil a la franja -->
+        <g>
+          <animateTransform attributeName="transform" type="translate"
+            values="-346 8; -346 8; 0 0; 0 0; 0 0"
+            keyTimes="0; 0.06; 0.36; 0.94; 1"
+            dur="6s" repeatCount="indefinite"/>
+          <g>
+            <animate attributeName="opacity"
+              values="1;1;1;0;1"
+              keyTimes="0;0.9;0.94;0.97;1"
+              dur="6s" repeatCount="indefinite"/>
+            <rect x="436" y="122" width="30" height="22" rx="5" fill="#38bdf8" filter="url(#fGlow)"/>
+          </g>
+        </g>
+
+        <!-- Check de confirmación dentro de la franja -->
+        <path d="M443 133 l4 4 l8 -9" fill="none" stroke="#ffffff" stroke-width="2.6"
+              stroke-linecap="round" stroke-linejoin="round"
+              stroke-dasharray="24" stroke-dashoffset="24">
+          <animate attributeName="stroke-dashoffset"
+            values="24;24;0;0;24" keyTimes="0;0.44;0.56;0.92;1"
+            dur="6s" repeatCount="indefinite"/>
+          <animate attributeName="opacity"
+            values="0;0;1;1;0" keyTimes="0;0.44;0.52;0.92;1"
+            dur="6s" repeatCount="indefinite"/>
+        </path>
+      </g>
+
+      <!-- Burbuja de confirmación / WhatsApp -->
+      <g>
+        <animateTransform attributeName="transform" type="translate"
+          values="0 18; 0 18; 0 0; 0 0; 0 18"
+          keyTimes="0;0.56;0.72;0.95;1"
+          dur="6s" repeatCount="indefinite"/>
+        <g>
+          <animate attributeName="opacity"
+            values="0;0;1;1;0" keyTimes="0;0.56;0.72;0.95;1"
+            dur="6s" repeatCount="indefinite"/>
+          <path d="M648 150 l-14 22 l30 -22 z" fill="#0b1220" stroke="#22c55e" stroke-width="2"/>
+          <rect x="650" y="78" width="146" height="76" rx="14" fill="#0b1220" stroke="#22c55e" stroke-width="2"/>
+          <circle cx="678" cy="106" r="15" fill="#22c55e">
+            <animate attributeName="r" values="15;17;15" dur="1.6s" repeatCount="indefinite"/>
+          </circle>
+          <path d="M671 106 l5 5 l9 -10" fill="none" stroke="#04121f" stroke-width="2.8"
+                stroke-linecap="round" stroke-linejoin="round"/>
+          <rect x="702" y="96" width="76" height="8" rx="4" fill="#94a3b8" opacity="0.7"/>
+          <rect x="702" y="112" width="54" height="8" rx="4" fill="#94a3b8" opacity="0.45"/>
+          <rect x="664" y="132" width="112" height="8" rx="4" fill="#1e3a5f"/>
+        </g>
+      </g>
+
+      <!-- Barrido de luz sutil -->
+      <rect x="-200" y="0" width="120" height="260" fill="#ffffff" opacity="0.03">
+        <animateTransform attributeName="transform" type="translate"
+          values="0 0; 1100 0" dur="7s" repeatCount="indefinite"/>
+      </rect>
+    </g>
+  </defs>
+</svg>
+
+<!-- Barra de progreso -->
+<div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
+
+<!-- Toolbar -->
+<div class="toolbar">
+  <div class="toolbar-inner">
+    <div class="search-box">
+      <input type="search" id="searchInput" placeholder="Buscar en el tutorial…" aria-label="Buscar en el tutorial">
+    </div>
+    <span class="search-count" id="searchCount"></span>
+    <button class="btn" id="btnFontDown" title="Reducir tamaño del texto">A−</button>
+    <button class="btn" id="btnFontUp" title="Aumentar tamaño del texto">A+</button>
+    <button class="btn" id="btnTheme" title="Cambiar tema">🌗 Tema</button>
+    <button class="btn" id="btnPrint" title="Imprimir o guardar como PDF">🖨️ PDF</button>
+  </div>
+</div>
+
+<div class="wrap" id="main">
+
+  <div class="print-header">
+    <h1>Agenda Virtual de Reservas Gratis con Google Sheets + Apps Script + Netlify</h1>
+    <p>Tutorial interactivo — Rubén Sbarsky, Autor del tutorial</p>
+  </div>
+
+  <div class="print-warn card warn" id="printWarn">
+    <strong>⚠️ Aviso sobre la impresión:</strong> estás viendo este archivo dentro de una ventana incrustada.
+    Si el botón <em>PDF</em> no responde, abre el archivo directamente en una pestaña del navegador
+    (doble clic sobre el archivo <code>.html</code>) y vuelve a intentarlo.
+  </div>
+
+  <!-- ============================================================
+       PESTAÑAS
+       ============================================================ -->
+  <nav class="tabs" role="tablist" id="tabsNav">
+    <button class="tab active" role="tab" aria-selected="true" data-target="p-inicio">INICIO</button>
+    <button class="tab" role="tab" aria-selected="false" data-target="p-conceptos">CONCEPTOS</button>
+    <button class="tab" role="tab" aria-selected="false" data-target="p-procedimiento">PROCEDIMIENTO</button>
+    <button class="tab" role="tab" aria-selected="false" data-target="p-practica">PRÁCTICA</button>
+    <button class="tab" role="tab" aria-selected="false" data-target="p-errores">ERRORES</button>
+    <button class="tab" role="tab" aria-selected="false" data-target="p-faq">FAQ</button>
+    <button class="tab" role="tab" aria-selected="false" data-target="p-resumen">RESUMEN</button>
+    <button class="tab" role="tab" aria-selected="false" data-target="p-fuentes">FUENTES</button>
+    <button class="tab" role="tab" aria-selected="false" data-target="p-creditos">CRÉDITOS</button>
+  </nav>
+
+  <!-- ============================================================
+       PANEL: INICIO
+       ============================================================ -->
+  <section class="panel active" id="p-inicio" role="tabpanel">
+
+    <div class="svg-hero">
+      <div class="hero-svg-mount" data-svg-hero="true" role="img" aria-label="Animación: una reserva viaja desde el móvil del cliente hasta el calendario y se confirma con un mensaje de WhatsApp."></div>
+    </div>
+
+    <h1>📅 Agenda Virtual de Reservas Gratis</h1>
+    <p style="font-size:1.05rem;color:var(--muted);margin-top:-.4em">
+      Con Google Sheets + Google Apps Script + Netlify — Guía paso a paso para dueños de negocio sin conocimientos técnicos.
+    </p>
+
+    <div class="card accent">
+      <h3 style="margin-top:0">¿Qué vas a construir?</h3>
+      <p>Vas a crear tu propia <strong>agenda online</strong> donde tus clientes podrán:</p>
+      <ul>
+        <li>Reservar cita desde el celular.</li>
+        <li>Ver qué días y horas tienes libres.</li>
+        <li>Recibir confirmación por WhatsApp.</li>
+      </ul>
+      <p>Todo esto <strong>sin pagar hosting, sin programar y sin depender de plataformas de pago</strong>.</p>
+    </div>
+
+    <h2>🎯 Objetivos del tutorial</h2>
+    <div class="grid two">
+      <div class="card ok">
+        <h4 style="margin-top:0">Al terminar serás capaz de…</h4>
+        <ul style="margin-bottom:0">
+          <li>Preparar los archivos del sistema.</li>
+          <li>Montar tu base de datos en Google Sheets.</li>
+          <li>Instalar el código en Apps Script.</li>
+          <li>Publicar tu agenda como aplicación web.</li>
+          <li>Probar reservas y gestionarlas con PIN.</li>
+          <li>Crear una URL profesional gratis con Netlify.</li>
+        </ul>
+      </div>
+      <div class="card warn">
+        <h4 style="margin-top:0">Lo que NO necesitas</h4>
+        <ul style="margin-bottom:0">
+          <li>Saber programar.</li>
+          <li>Pagar hosting ni dominio.</li>
+          <li>Contratar a un informático.</li>
+          <li>Instalar nada en tu computadora.</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2>🧰 ¿Qué necesitas antes de empezar?</h2>
+    <table>
+      <thead>
+        <tr><th>Requisito</th><th>Detalle</th><th>¿Obligatorio?</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Cuenta de Google</td><td>Gratis, se crea en <code>accounts.google.com</code></td><td><span class="pill ok">Sí</span></td></tr>
+        <tr><td>Navegador moderno</td><td>Chrome, Edge o Safari</td><td><span class="pill ok">Sí</span></td></tr>
+        <tr><td>El paquete <code>AgendaVirtual.zip</code></td><td>Te lo entrega el creador del sistema</td><td><span class="pill ok">Sí</span></td></tr>
+        <tr><td>WhatsApp en el celular</td><td>Solo si quieres enviar avisos automáticos</td><td><span class="pill warn">Recomendado</span></td></tr>
+        <tr><td>Cuenta en Netlify</td><td>Para la URL bonita (<code>tunegocio.netlify.app</code>)</td><td><span class="pill">Opcional</span></td></tr>
+        <tr><td>Tiempo</td><td>Entre 40 y 60 minutos la primera vez</td><td><span class="pill ok">Sí</span></td></tr>
+      </tbody>
+    </table>
+
+    <h2>🧭 Cómo usar este tutorial</h2>
+    <div class="card">
+      <ol>
+        <li><strong>Lee la pestaña CONCEPTOS</strong> primero. Ahí entenderás qué es cada herramienta con palabras sencillas.</li>
+        <li><strong>Sigue la pestaña PROCEDIMIENTO</strong> en orden, del Paso 1 al Paso 7. No te saltes ninguno.</li>
+        <li><strong>Haz una sola acción por paso.</strong> Cada paso numerado es una única cosa que debes hacer.</li>
+        <li><strong>Comprueba el "Resultado esperado"</strong> antes de pasar al siguiente paso.</li>
+        <li><strong>Si algo falla</strong>, mira el recuadro rojo "Si algo sale mal" de ese paso y la pestaña ERRORES.</li>
+        <li><strong>Practica</strong> con los ejercicios de la pestaña PRÁCTICA.</li>
+        <li>Usa la <strong>barra de búsqueda</strong> de arriba si necesitas encontrar algo concreto.</li>
+      </ol>
+    </div>
+
+    <h2>✅ Checklist de aprendizaje</h2>
+    <p class="hint">Marca cada casilla a medida que avanzas. Tu progreso se guarda solo en este navegador.</p>
+    <div id="checklistInicio">
+      <label class="check-item"><input type="checkbox" data-id="c1"><span>Entendí qué es Google Sheets, Apps Script y Netlify.</span></label>
+      <label class="check-item"><input type="checkbox" data-id="c2"><span>Descargué y descomprimí el paquete <code>AgendaVirtual.zip</code>.</span></label>
+      <label class="check-item"><input type="checkbox" data-id="c3"><span>Subí la base de datos a Google Drive y la convertí a Hoja de cálculo.</span></label>
+      <label class="check-item"><input type="checkbox" data-id="c4"><span>Eliminé el archivo <code>.xlsx</code> original.</span></label>
+      <label class="check-item"><input type="checkbox" data-id="c5"><span>Rellené las pestañas Config, Especialistas, Servicios y Horarios.</span></label>
+      <label class="check-item"><input type="checkbox" data-id="c6"><span>Instalé <code>code.gs</code> y los 4 archivos HTML en Apps Script.</span></label>
+      <label class="check-item"><input type="checkbox" data-id="c7"><span>Activé el manifiesto <code>appsscript.json</code> y puse mi zona horaria.</span></label>
+      <label class="check-item"><input type="checkbox" data-id="c8"><span>Creé la propiedad <code>admin_pin</code> con mi clave secreta.</span></label>
+      <label class="check-item"><input type="checkbox" data-id="c9"><span>Publiqué la aplicación web y guardé la URL <code>/exec</code>.</span></label>
+      <label class="check-item"><input type="checkbox" data-id="c10"><span>Hice una reserva de prueba y la vi en la pestaña Reservas.</span></label>
+      <label class="check-item"><input type="checkbox" data-id="c11"><span>Entré al panel de administración con mi PIN.</span></label>
+      <label class="check-item"><input type="checkbox" data-id="c12"><span>Creé mi URL bonita en Netlify (opcional).</span></label>
+    </div>
+    <p id="checkProgress" class="hint"></p>
+
+    <h2>⚡ Resumen exprés</h2>
+    <div class="card accent">
+      <p style="margin:0"><strong>Google Sheets</strong> es tu libro de citas → <strong>Apps Script</strong> es el motor que lo hace funcionar → <strong>Netlify</strong> es el escaparate con la URL bonita. Tú solo rellenas una hoja de cálculo; el resto lo hace el sistema.</p>
+    </div>
+
+  </section>
+
+  <!-- ============================================================
+       PANEL: CONCEPTOS
+       ============================================================ -->
+  <section class="panel" id="p-conceptos" role="tabpanel">
+
+    <h1>🧠 Conceptos básicos</h1>
+    <p>Antes de tocar nada, entiende <strong>qué es cada pieza</strong> y <strong>para qué sirve</strong>. Cinco minutos aquí te ahorrarán una hora de dudas después.</p>
+
+    <h2>1. ¿Qué es esto en una frase?</h2>
+    <div class="card accent">
+      <p style="margin:0">Es una <strong>agenda online gratuita</strong> hecha con tres herramientas de Google y una de Netlify, donde tus clientes reservan solos y tú lo ves todo en una hoja de cálculo.</p>
+    </div>
+
+    <h2>2. Las tres herramientas, explicadas para dummies</h2>
+    <div class="grid three">
+      <div class="card">
+        <span class="pill">1</span>
+        <h3>Google Sheets</h3>
+        <p><strong>Qué es:</strong> la versión online de Excel.</p>
+        <p><strong>Para qué sirve aquí:</strong> es tu <em>libro de citas</em>. Como el cuaderno que usas hoy, pero digital.</p>
+        <p><strong>Por qué importa:</strong> es donde tú cambias precios, horarios y servicios sin tocar código.</p>
+      </div>
+      <div class="card">
+        <span class="pill">2</span>
+        <h3>Google Apps Script</h3>
+        <p><strong>Qué es:</strong> el "cerebro" que hace funcionar la agenda.</p>
+        <p><strong>Para qué sirve aquí:</strong> lee tu hoja, calcula huecos libres y publica la página web.</p>
+        <p><strong>Por qué importa:</strong> es el motor del auto: tú no lo ves, pero hace que todo se mueva.</p>
+      </div>
+      <div class="card">
+        <span class="pill">3</span>
+        <h3>Netlify</h3>
+        <p><strong>Qué es:</strong> un hosting gratuito para principiantes.</p>
+        <p><strong>Para qué sirve aquí:</strong> te da un enlace corto y bonito en lugar de la URL larga de Google.</p>
+        <p><strong>Por qué importa:</strong> <code>mibarbieria.netlify.app</code> se comparte mucho mejor que una URL de 90 caracteres.</p>
+      </div>
+    </div>
+
+    <h2>3. Cómo se conectan las piezas</h2>
+    <div class="diagram">
+      <svg viewBox="0 0 760 190" role="img" aria-label="Diagrama: el cliente reserva en la web, Apps Script procesa y escribe en Google Sheets, y el dueño administra con PIN.">
+        <defs>
+          <marker id="arrowD" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0 0 L10 5 L0 10 z" fill="#38bdf8"/>
+          </marker>
+        </defs>
+        <rect x="0" y="0" width="760" height="190" rx="14" fill="#0b1220"/>
+        <g font-family="sans-serif" font-size="13" text-anchor="middle">
+
+          <rect x="20" y="60" width="130" height="66" rx="12" fill="#1e3a5f" stroke="#38bdf8"/>
+          <text x="85" y="88" fill="#e2e8f0" font-weight="700">CLIENTE</text>
+          <text x="85" y="108" fill="#93c5fd" font-size="11">Reserva desde el móvil</text>
+
+          <rect x="205" y="60" width="140" height="66" rx="12" fill="#1e3a5f" stroke="#38bdf8"/>
+          <text x="275" y="88" fill="#e2e8f0" font-weight="700">WEB APP</text>
+          <text x="275" y="108" fill="#93c5fd" font-size="11">Página publicada</text>
+
+          <rect x="400" y="60" width="140" height="66" rx="12" fill="#1e3a5f" stroke="#22c55e"/>
+          <text x="470" y="88" fill="#e2e8f0" font-weight="700">APPS SCRIPT</text>
+          <text x="470" y="108" fill="#86efac" font-size="11">El motor / cerebro</text>
+
+          <rect x="595" y="60" width="140" height="66" rx="12" fill="#1e3a5f" stroke="#22c55e"/>
+          <text x="665" y="88" fill="#e2e8f0" font-weight="700">GOOGLE SHEETS</text>
+          <text x="665" y="108" fill="#86efac" font-size="11">BD Agenda</text>
+
+          <line x1="152" y1="93" x2="200" y2="93" stroke="#38bdf8" stroke-width="2" marker-end="url(#arrowD)"/>
+          <line x1="347" y1="93" x2="395" y2="93" stroke="#38bdf8" stroke-width="2" marker-end="url(#arrowD)"/>
+          <line x1="542" y1="93" x2="590" y2="93" stroke="#38bdf8" stroke-width="2" marker-end="url(#arrowD)"/>
+
+          <text x="380" y="35" fill="#94a3b8" font-size="11">El dueño administra con PIN → panel de administración</text>
+          <path d="M380 45 L380 58" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrowD)"/>
+        </g>
+      </svg>
+    </div>
+
+    <h2>4. La tabla de las 6 pestañas de tu hoja</h2>
+    <p>Tu archivo <code>BD Agenda</code> tiene 6 pestañas. Cada una cumple un rol:</p>
+    <table>
+      <thead>
+        <tr><th>Pestaña</th><th>Qué contiene</th><th>¿Quién la toca?</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>🎨 <strong>Config</strong></td><td>Nombre del negocio, número de WhatsApp, colores y mensajes automáticos.</td><td>Tú</td></tr>
+        <tr><td>👥 <strong>Especialistas</strong></td><td>La lista de personas que atienden (tú, empleados, doctores, estilistas…).</td><td>Tú</td></tr>
+        <tr><td>💈 <strong>Servicios</strong></td><td>Cada servicio, cuántos minutos dura y su precio.</td><td>Tú</td></tr>
+        <tr><td>🕐 <strong>Horarios</strong></td><td>Bloques de días y horas en que atiendes. Ej.: Lunes a Viernes de 9:00 a 18:00.</td><td>Tú</td></tr>
+        <tr><td>🚫 <strong>Bloqueos</strong></td><td>Festivos, vacaciones o ausencias puntuales donde NO atiendes.</td><td>Tú</td></tr>
+        <tr><td>📒 <strong>Reservas</strong></td><td>Las citas que hacen tus clientes. Se llenan solas.</td><td><strong>Nadie</strong> (automático)</td></tr>
+      </tbody>
+    </table>
+    <div class="card warn">
+      <strong>⚠️ Regla de oro:</strong> nunca escribas a mano en la pestaña <em>Reservas</em>. Ese es el registro automático del sistema.
+    </div>
+
+    <h2>5. Los 6 archivos del paquete</h2>
+    <table>
+      <thead><tr><th>Archivo</th><th>Qué es</th><th>Dónde va</th></tr></thead>
+      <tbody>
+        <tr><td><code>BaseDatos.xlsx</code></td><td>Plantilla de la agenda en Excel</td><td>Google Drive (se convierte)</td></tr>
+        <tr><td><code>code.gs</code></td><td>El motor: toda la lógica</td><td>Apps Script</td></tr>
+        <tr><td><code>index.html</code></td><td>La pantalla que ve el cliente</td><td>Apps Script</td></tr>
+        <tr><td><code>admin.html</code></td><td>El panel donde tú gestionas citas</td><td>Apps Script</td></tr>
+        <tr><td><code>estilobase.html</code></td><td>Los estilos visuales</td><td>Apps Script</td></tr>
+        <tr><td><code>iconobase64.html</code></td><td>El icono incrustado</td><td>Apps Script</td></tr>
+        <tr><td><code>appsscript.json</code></td><td>El "acta de nacimiento": zona horaria y configuración base</td><td>Apps Script (oculto)</td></tr>
+        <tr><td><code>Netlify/index.html</code></td><td>Mini página que redirige a tu agenda</td><td>Netlify</td></tr>
+      </tbody>
+    </table>
+
+    <h2>6. Glosario</h2>
+    <div class="acc">
+      <button class="acc-head">📦 ZIP — archivo comprimido</button>
+      <div class="acc-body"><p>Es como una <strong>maleta comprimida</strong>: agrupa muchos archivos dentro de uno solo para que se descargue más rápido. No se puede usar directamente; hay que "abrirlo" (descomprimirlo).</p></div>
+    </div>
+    <div class="acc">
+      <button class="acc-head">📊 .xlsx — archivo de Excel</button>
+      <div class="acc-body"><p>Es un archivo de Excel normal. <strong>Apps Script no puede leerlo directamente</strong>, por eso hay que convertirlo a Hoja de cálculo de Google.</p></div>
+    </div>
+    <div class="acc">
+      <button class="acc-head">📗 Hoja de cálculo de Google</button>
+      <div class="acc-body"><p>Es el formato nativo de Google Sheets, vive en la nube y se edita desde el navegador. Es el formato que sí entiende Apps Script.</p></div>
+    </div>
+    <div class="acc">
+      <button class="acc-head">🧩 Manifiesto (<code>appsscript.json</code>)</button>
+      <div class="acc-body"><p>El <strong>acta de nacimiento</strong> del proyecto: define la zona horaria y otras configuraciones base. Por defecto Apps Script lo esconde.</p></div>
+    </div>
+    <div class="acc">
+      <button class="acc-head">🔑 Propiedad del script (<code>admin_pin</code>)</button>
+      <div class="acc-body"><p>Un par <em>nombre = valor</em> guardado en el proyecto. Aquí se usa para guardar tu PIN secreto del panel de administración.</p></div>
+    </div>
+    <div class="acc">
+      <button class="acc-head">🚀 Implementación (Deploy)</button>
+      <div class="acc-body"><p>Es el acto de <strong>publicar</strong> tu proyecto como página web. Cada implementación genera una URL terminada en <code>/exec</code>.</p></div>
+    </div>
+    <div class="acc">
+      <button class="acc-head">🔢 PIN</button>
+      <div class="acc-body"><p>La clave numérica que protege tu panel de administración. Solo tú la sabes.</p></div>
+    </div>
+    <div class="acc">
+      <button class="acc-head">🕓 Zona horaria (timezone)</button>
+      <div class="acc-body"><p>El identificador de tu región horaria, por ejemplo <code>Europe/Madrid</code> o <code>America/Bogota</code>. Define a qué hora se guardan las citas.</p></div>
+    </div>
+    <div class="acc">
+      <button class="acc-head">🌐 Netlify</button>
+      <div class="acc-body"><p>Un servicio de hosting gratuito. Subes una carpeta y te da un enlace corto y bonito.</p></div>
+    </div>
+
+  </section>
+
+  <!-- ============================================================
+       PANEL: PROCEDIMIENTO
+       ============================================================ -->
+  <section class="panel" id="p-procedimiento" role="tabpanel">
+
+    <h1>🚀 Procedimiento paso a paso</h1>
+    <p>Sigue los pasos <strong>en orden</strong>. Cada paso numerado es <strong>una sola acción</strong>. Antes de avanzar, comprueba el "Resultado esperado".</p>
+
+    <div class="card accent">
+      <strong>Índice rápido</strong>
+      <ol style="margin-bottom:0">
+        <li><a href="#paso1">Descarga y preparación de los archivos</a></li>
+        <li><a href="#paso2">Subir y configurar la base de datos en Google Drive</a></li>
+        <li><a href="#paso3">Instalación del código en Google Apps Script</a></li>
+        <li><a href="#paso4">Publicación e implementación de la aplicación web</a></li>
+        <li><a href="#paso5">Prueba de reservas y panel de administración</a></li>
+        <li><a href="#paso6">URL profesional gratis con Netlify (opcional)</a></li>
+        <li><a href="#paso7">Mantenimiento y dudas frecuentes</a></li>
+      </ol>
+    </div>
+
+    <!-- ============ PASO 1 ============ -->
+    <article class="stepcard" id="paso1">
+      <header class="stepcard-head">
+        <span class="stepnum">1</span>
+        <h3>Descarga y preparación de los archivos</h3>
+      </header>
+      <div class="stepcard-body">
+        <p class="objetivo"><strong>Objetivo:</strong> tener en tu computadora la carpeta con todas las piezas del sistema, listas para usar.</p>
+        <p><strong>Explicación sencilla:</strong> es como recibir una caja con todas las piezas para armar un mueble. Todavía no armas nada: solo abres la caja y compruebas que estén todas las piezas.</p>
+
+        <h4>1.1 — Descargar el paquete</h4>
+        <ol class="pasos">
+          <li>Abre el enlace de descarga que te compartió el creador del sistema.
+            <span class="motivo">Por qué: es la única fuente oficial del paquete.</span></li>
+          <li>Localiza el archivo llamado <code>AgendaVirtual.zip</code>.
+            <span class="motivo">Un ZIP es una maleta comprimida: agrupa muchos archivos en uno.</span></li>
+          <li>Haz clic en <strong>Descargar</strong>.
+            <span class="motivo">El archivo se guardará en tu carpeta <em>Descargas</em>.</span></li>
+        </ol>
+
+        <h4>1.2 — Descomprimir el ZIP</h4>
+        <ol class="pasos">
+          <li>Abre tu carpeta <strong>Descargas</strong>.</li>
+          <li>Haz clic derecho sobre <code>AgendaVirtual.zip</code>.</li>
+          <li>Elige <strong>“Extraer todo…”</strong> si usas Windows, o <strong>“Abrir”</strong> si usas Mac.</li>
+          <li>Confirma la extracción (botón <strong>Extraer</strong>).</li>
+        </ol>
+        <div class="resultado"><strong>Resultado esperado:</strong> aparece una carpeta nueva llamada <code>AgendaVirtual</code> junto al ZIP.</div>
+
+        <h4>1.3 — ¿Qué hay dentro de esa carpeta?</h4>
+        <p>Ábrela. Deberías encontrar algo parecido a esto:</p>
+        <table>
+          <thead><tr><th>Elemento</th><th>Qué es</th></tr></thead>
+          <tbody>
+            <tr><td>📊 <code>BaseDatos.xlsx</code></td><td>La plantilla de tu agenda en Excel.</td></tr>
+            <tr><td>📁 Carpeta <code>AppsScript</code></td><td>Contiene 6 archivos de código: <code>code.gs</code>, <code>index.html</code>, <code>admin.html</code>, <code>estilobase.html</code>, <code>iconobase64.html</code> y <code>appsscript.json</code>.</td></tr>
+            <tr><td>📁 Carpeta <code>Netlify</code></td><td>Contiene un <code>index.html</code> que usarás más adelante para tu enlace profesional.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="card warn" style="margin-top:14px">
+          <strong>⚠️ Importante:</strong> no muevas ni renombres los archivos por ahora. Cada uno tiene su propósito exacto y su nombre debe respetarse tal cual.
+        </div>
+
+        <div class="sifalla"><strong>Si algo sale mal:</strong> si al hacer clic derecho no ves la opción <em>Extraer todo</em>, probablemente ya tengas la carpeta extraída (busca <code>AgendaVirtual</code> en Descargas). Si el ZIP no se descargó, revisa que tu antivirus no lo haya bloqueado y vuelve a descargarlo desde el enlace original.</div>
+      </div>
+    </article>
+
+    <!-- ============ PASO 2 ============ -->
+    <article class="stepcard" id="paso2">
+      <header class="stepcard-head">
+        <span class="stepnum">2</span>
+        <h3>Subir y configurar la base de datos en Google Drive</h3>
+      </header>
+      <div class="stepcard-body">
+        <p class="objetivo"><strong>Objetivo:</strong> subir tu "libro de citas digital" a Google Drive y prepararlo para que Apps Script pueda leerlo.</p>
+        <p><strong>Explicación sencilla:</strong> el archivo Excel que tienes en tu computadora es como un mueble desmontado. Vamos a subirlo a la nube y a convertirlo al idioma que Google entiende.</p>
+
+        <h4>2.1 — Entrar a Google Drive y crear una carpeta</h4>
+        <ol class="pasos">
+          <li>Abre tu navegador (Chrome, Edge, Safari…) y entra a <code>https://drive.google.com</code>.</li>
+          <li>Inicia sesión con tu cuenta de Google.
+            <span class="motivo">Si no tienes, crea una gratis en <code>https://accounts.google.com</code>.</span></li>
+          <li>En el menú lateral izquierdo, haz clic en <strong>+ Nuevo → Carpeta nueva</strong>.</li>
+          <li>Escribe el nombre <strong>Mi Agenda Virtual</strong>.</li>
+          <li>Presiona <strong>Crear</strong>.</li>
+          <li>Haz doble clic sobre esa carpeta para abrirla.
+            <span class="motivo">Así todo el proyecto queda junto y no se mezcla con tus fotos o documentos personales.</span></li>
+        </ol>
+
+        <h4>2.2 — Subir la base de datos</h4>
+        <ol class="pasos">
+          <li>Dentro de la carpeta <strong>Mi Agenda Virtual</strong>, haz clic en <strong>+ Nuevo → Subir archivo</strong>.</li>
+          <li>En el explorador, ve a la carpeta <code>AgendaVirtual</code> que descomprimiste en el Paso 1.</li>
+          <li>Selecciona el archivo <code>BaseDatos.xlsx</code>.</li>
+          <li>Confirma la subida.</li>
+        </ol>
+        <div class="resultado"><strong>Resultado esperado:</strong> ves <code>BaseDatos.xlsx</code> dentro de la carpeta <em>Mi Agenda Virtual</em>.</div>
+
+        <h4>2.3 — 🚨 Paso crítico: convertir el Excel a Hoja de Cálculo de Google</h4>
+        <p>El archivo <code>.xlsx</code> es un Excel normal; <strong>Apps Script no puede leerlo directamente</strong>. Necesitas convertirlo al formato nativo de Google.</p>
+        <ol class="pasos">
+          <li>Haz doble clic sobre <code>BaseDatos.xlsx</code> en Drive.
+            <span class="motivo">Se abrirá una vista previa.</span></li>
+          <li>Arriba, haz clic en el botón <strong>“Abrir con Google Sheets”</strong> (o “Abrir con Hojas de cálculo de Google”).</li>
+          <li>En la hoja abierta, ve al menú <strong>Archivo → Guardar como hoja de cálculo de Google</strong>.</li>
+          <li>Cierra la pestaña de la vista previa.</li>
+          <li>Vuelve a la carpeta en Drive y haz clic derecho sobre la copia nueva.</li>
+          <li>Elige <strong>Cambiar nombre</strong> y escribe <strong>BD Agenda</strong>.</li>
+        </ol>
+        <div class="resultado"><strong>Resultado esperado:</strong> dentro de <em>Mi Agenda Virtual</em> hay un archivo llamado <code>BD Agenda</code> con el icono verde de Google Sheets.</div>
+
+        <h4>2.4 — ❌ Eliminar el archivo .xlsx original</h4>
+        <div class="card warn"><strong>Esto es MUY importante:</strong> si dejas el <code>.xlsx</code> y el nuevo en la misma carpeta, después te confundirás.</div>
+        <ol class="pasos">
+          <li>Asegúrate de que la hoja <code>BD Agenda</code> está guardada y ciérrala.</li>
+          <li>Vuelve a la carpeta <strong>Mi Agenda Virtual</strong> en Drive.</li>
+          <li>Selecciona el archivo <code>BaseDatos.xlsx</code> (el original).</li>
+          <li>Haz clic derecho → <strong>Eliminar</strong>.</li>
+        </ol>
+        <div class="resultado"><strong>Resultado esperado:</strong> en la carpeta solo queda la versión <em>Hoja de cálculo de Google</em>.</div>
+        <div class="sifalla"><strong>Si algo sale mal:</strong> si tienes dudas, borra el <code>.xlsx</code> sin miedo: ya tienes la copia buena. Si borraste la copia equivocada, ve a la papelera de Drive y restáurala.</div>
+
+        <h4>2.5 — Conoce las 6 pestañas de tu Hoja de Cálculo</h4>
+        <p>Abre <code>BD Agenda</code>. Abajo verás 6 pestañas:</p>
+        <table>
+          <thead><tr><th>Pestaña</th><th>Rol</th></tr></thead>
+          <tbody>
+            <tr><td>🎨 <strong>Config</strong></td><td>Nombre de tu negocio, número de WhatsApp, colores y mensajes automáticos para tus clientes.</td></tr>
+            <tr><td>👥 <strong>Especialistas</strong></td><td>Lista de personas que atienden (tú, tus empleados, doctores, estilistas…).</td></tr>
+            <tr><td>💈 <strong>Servicios</strong></td><td>Cada servicio que ofreces, cuántos minutos dura y su precio.</td></tr>
+            <tr><td>🕐 <strong>Horarios</strong></td><td>Bloques de días y horas en que atiendes. Ej.: Lunes a Viernes de 9:00 a 18:00.</td></tr>
+            <tr><td>🚫 <strong>Bloqueos</strong></td><td>Días festivos, vacaciones o ausencias puntuales donde NO atiendes.</td></tr>
+            <tr><td>📒 <strong>Reservas</strong></td><td>Aquí se guardan automáticamente las citas. <strong>No escribas aquí manualmente.</strong></td></tr>
+          </tbody>
+        </table>
+        <div class="card accent">
+          💡 <strong>Consejo rápido:</strong> dedica unos minutos a rellenar bien las pestañas <em>Config</em>, <em>Especialistas</em>, <em>Servicios</em> y <em>Horarios</em>. Cuanto más completo, mejor se verá tu agenda al público.
+        </div>
+
+        <div class="sifalla"><strong>Si algo sale mal:</strong> si no aparece el botón "Abrir con Google Sheets", haz clic derecho sobre el <code>.xlsx</code> en Drive → <strong>Abrir con</strong> → <strong>Hojas de cálculo de Google</strong>. Si el nombre de la pestaña no cambia, refresca la página con F5.</div>
+      </div>
+    </article>
+
+    <!-- ============ PASO 3 ============ -->
+    <article class="stepcard" id="paso3">
+      <header class="stepcard-head">
+        <span class="stepnum">3</span>
+        <h3>Instalación del código en Google Apps Script</h3>
+      </header>
+      <div class="stepcard-body">
+        <p class="objetivo"><strong>Objetivo:</strong> "darle vida" a la agenda colocando cada pieza de código en su lugar.</p>
+        <p><strong>Explicación sencilla:</strong> Apps Script es el motor del auto. Hoy solo vas a colocar las piezas donde van; no necesitas entender el código.</p>
+
+        <h4>3.1 — Abrir Apps Script desde tu Hoja de Cálculo</h4>
+        <ol class="pasos">
+          <li>Ten abierta la hoja <strong>BD Agenda</strong>.</li>
+          <li>En el menú superior, haz clic en <strong>Extensiones → Apps Script</strong>.</li>
+          <li>Espera a que se abra la nueva pestaña del editor.</li>
+        </ol>
+        <div class="resultado"><strong>Resultado esperado:</strong> ves una pantalla con fondo blanco y un archivo llamado <code>Código.gs</code> (o <code>Code.gs</code>) con un pequeño texto dentro.</div>
+
+        <h4>3.2 — Reemplazar el código principal (<code>code.gs</code>)</h4>
+        <ol class="pasos">
+          <li>En el editor, haz clic sobre el archivo <strong>Código.gs</strong> en la columna izquierda.</li>
+          <li>Selecciona TODO el texto con <code>Ctrl+A</code> (Windows) o <code>Cmd+A</code> (Mac).</li>
+          <li>Bórralo con la tecla <strong>Suprimir</strong>.</li>
+          <li>En tu computadora, abre la carpeta <code>AgendaVirtual → AppsScript</code>.</li>
+          <li>Abre el archivo <code>code.gs</code> con el Bloc de notas (Windows) o TextEdit (Mac).</li>
+          <li>Copia todo su contenido con <code>Ctrl+C</code> / <code>Cmd+C</code>.</li>
+          <li>Vuelve al editor de Apps Script y pega con <code>Ctrl+V</code> / <code>Cmd+V</code>.</li>
+          <li>Guarda con el icono del disquete 💾 o con <code>Ctrl+S</code> / <code>Cmd+S</code>.</li>
+          <li>Opcional: haz clic en los tres puntos junto a "Código.gs" → <strong>Cambiar nombre</strong> → escribe <code>code.gs</code>.</li>
+        </ol>
+        <div class="resultado"><strong>Resultado esperado:</strong> el archivo <code>code.gs</code> contiene el código largo del sistema, no el texto de ejemplo.</div>
+
+        <h4>3.3 — Crear los 4 archivos HTML secundarios</h4>
+        <p>Ahora debes crear 4 archivos nuevos. Son las "pantallas" que verá el cliente y tú como administrador.</p>
+        <ol class="pasos">
+          <li>En el editor, junto a "Archivos" (columna izquierda), haz clic en el botón <strong>+</strong>.</li>
+          <li>Elige <strong>HTML</strong>.</li>
+          <li>Escribe el nombre <code>index</code> y presiona Enter.
+            <span class="motivo">El editor añade la extensión solo. No escribas ".html".</span></li>
+          <li>Selecciona todo el código por defecto y bórralo.</li>
+          <li>Pega el contenido del archivo <code>index.html</code> de tu carpeta <code>AppsScript</code>.</li>
+          <li>Guarda con <code>Ctrl+S</code>.</li>
+        </ol>
+        <p>Repite el mismo proceso para los otros tres:</p>
+        <table>
+          <thead><tr><th>Nombre en Apps Script</th><th>Contenido a pegar</th></tr></thead>
+          <tbody>
+            <tr><td><code>admin</code></td><td>contenido de <code>admin.html</code></td></tr>
+            <tr><td><code>estilobase</code></td><td>contenido de <code>estilobase.html</code></td></tr>
+            <tr><td><code>iconobase64</code></td><td>contenido de <code>iconobase64.html</code></td></tr>
+          </tbody>
+        </table>
+
+        <div class="card warn">
+          <strong>⚠️ Importante:</strong> los nombres deben ser exactamente como se indican. Apps Script es sensible a los nombres: si escribes "Index" con mayúscula, podría no funcionar.
+        </div>
+
+        <h4>3.4 — 🚨 Paso crítico: activar el manifiesto oculto (<code>appsscript.json</code>)</h4>
+        <p>El archivo <code>appsscript.json</code> es como el <strong>acta de nacimiento</strong> del proyecto: define la zona horaria y otras configuraciones base. Por defecto, Apps Script lo esconde.</p>
+        <ol class="pasos">
+          <li>En el editor, mira la columna izquierda y baja hasta abajo.</li>
+          <li>Haz clic en el icono de engranaje ⚙️ <strong>Configuración del proyecto</strong>.</li>
+          <li>Marca la casilla <strong>“Mostrar el archivo de manifiesto appsscript.json en el editor”</strong>.</li>
+          <li>Vuelve a la vista de Editor (icono <code>&lt; &gt;</code> en la barra izquierda).</li>
+          <li>Abre el archivo nuevo llamado <code>appsscript.json</code>.</li>
+          <li>Borra todo su contenido.</li>
+          <li>Pega el contenido del <code>appsscript.json</code> que descargaste.</li>
+          <li>Busca dentro del código la línea <code>"timeZone": "America/Mexico_City"</code>.</li>
+          <li>Sustituye ese valor por tu zona horaria real.
+            <span class="motivo">Ejemplos: <code>Europe/Madrid</code>, <code>America/Bogota</code>, <code>America/Argentina/Buenos_Aires</code>.</span></li>
+          <li>Guarda con <code>Ctrl+S</code>.</li>
+        </ol>
+        <div class="copyRow">
+          <code>Europe/Madrid</code>
+          <button class="btn small copyBtn" data-copy="Europe/Madrid">COPIAR</button>
+        </div>
+        <div class="copyRow">
+          <code>America/Bogota</code>
+          <button class="btn small copyBtn" data-copy="America/Bogota">COPIAR</button>
+        </div>
+        <div class="copyRow">
+          <code>America/Argentina/Buenos_Aires</code>
+          <button class="btn small copyBtn" data-copy="America/Argentina/Buenos_Aires">COPIAR</button>
+        </div>
+        <div class="hint">Si no sabes la tuya, búscala en Google como <em>"timezone [tu ciudad]"</em>.</div>
+
+        <h4>3.5 — 🚨 Paso crítico de seguridad: crear el PIN del panel de administración</h4>
+        <p>Tu panel de administración (donde verás y confirmarás citas) debe estar protegido con una clave. Esa clave se llama <strong>PIN</strong>.</p>
+        <ol class="pasos">
+          <li>En Apps Script, ve de nuevo al engranaje ⚙️ <strong>Configuración del proyecto</strong>.</li>
+          <li>Baja hasta la sección <strong>Propiedades del script</strong>.</li>
+          <li>Haz clic en <strong>Agregar propiedad del script</strong>.</li>
+          <li>En el campo <strong>Propiedad</strong>, escribe exactamente <code>admin_pin</code>.
+            <span class="motivo">En minúsculas y con guion bajo. Si lo escribes distinto, el panel NO reconocerá tu clave.</span></li>
+          <li>En el campo <strong>Valor</strong>, escribe un número que solo tú sepas (por ejemplo <code>2580</code>).</li>
+          <li>Haz clic en <strong>Guardar propiedad del script</strong>.</li>
+        </ol>
+        <div class="copyRow">
+          <code>admin_pin</code>
+          <button class="btn small copyBtn" data-copy="admin_pin">COPIAR</button>
+        </div>
+        <div class="card err">
+          <strong>❌ Nombres que NO funcionan:</strong> <code>Admin_Pin</code>, <code>adminpin</code>, <code>admin-pin</code>, <code>ADMIN_PIN</code>.
+        </div>
+
+        <div class="sifalla"><strong>Si algo sale mal:</strong> si no ves la opción de HTML en el botón <strong>+</strong>, asegúrate de estar en la vista <em>Editor</em> y no en <em>Configuración</em>. Si el archivo se llama <code>index.html.html</code>, bórralo y créalo otra vez escribiendo solo <code>index</code>.</div>
+      </div>
+    </article>
+
+    <!-- ============ PASO 4 ============ -->
+    <article class="stepcard" id="paso4">
+      <header class="stepcard-head">
+        <span class="stepnum">4</span>
+        <h3>Publicación e implementación de la aplicación web</h3>
+      </header>
+      <div class="stepcard-body">
+        <p class="objetivo"><strong>Objetivo:</strong> convertir tu proyecto en una página web real con su propio enlace.</p>
+        <p><strong>Explicación sencilla:</strong> hasta ahora tenías el motor armado pero apagado. Ahora lo enciendes y le das una dirección de internet.</p>
+
+        <h4>4.1 — Publicar la app</h4>
+        <ol class="pasos">
+          <li>En el editor de Apps Script, mira arriba a la derecha.</li>
+          <li>Haz clic en el botón azul <strong>Implementar</strong> (o <em>Deploy</em>).</li>
+          <li>Elige <strong>Nueva implementación</strong>.</li>
+          <li>Junto a <em>Seleccionar tipo</em>, haz clic en el engranaje ⚙️.</li>
+          <li>Elige <strong>Aplicación web</strong>.</li>
+        </ol>
+
+        <h4>4.2 — Configuración EXACTA</h4>
+        <p>Rellena así, respetando mayúsculas y opciones:</p>
+        <table>
+          <thead><tr><th>Campo</th><th>Valor exacto</th><th>Por qué</th></tr></thead>
+          <tbody>
+            <tr><td>Descripción</td><td><code>Agenda v1</code></td><td>Es solo para ti; el cliente no la ve.</td></tr>
+            <tr><td>Ejecutar como</td><td><strong>Yo</strong> (tu correo)</td><td>La app funciona con tus permisos. Nadie más tendrá acceso a tu cuenta.</td></tr>
+            <tr><td>Quién tiene acceso</td><td><strong>Cualquier persona</strong></td><td>Necesario para que cualquier cliente pueda reservar. Solo acceden a la agenda, no a tu correo ni a tus archivos.</td></tr>
+          </tbody>
+        </table>
+        <ol class="pasos">
+          <li>Haz clic en <strong>Implementar</strong>.</li>
+          <li>Haz clic en <strong>Hecho</strong>.</li>
+        </ol>
+
+        <h4>4.3 — 😨 La pantalla de permisos de Google (no te asustes)</h4>
+        <p>Al implementar por primera vez, Google te mostrará una advertencia. Es completamente normal cuando creas tu propia app.</p>
+        <ol class="pasos">
+          <li>Cuando aparezca <strong>“Se necesita autorización”</strong>, haz clic en <strong>Revisar permisos</strong>.</li>
+          <li>Elige tu cuenta de Google.</li>
+          <li>Cuando veas <strong>“Google no ha verificado esta aplicación”</strong>, baja hasta abajo.</li>
+          <li>Haz clic en <strong>Configuración avanzada</strong>.</li>
+          <li>Haz clic en <strong>Ir a [nombre de tu proyecto] (no seguro)</strong>.</li>
+          <li>Lee la lista de permisos con calma.
+            <span class="motivo">Todos son para gestionar tu propia agenda.</span></li>
+          <li>Haz clic en <strong>Permitir</strong>.</li>
+        </ol>
+        <div class="card accent">
+          💡 <strong>Consejo rápido:</strong> esa advertencia aparece porque tú eres el desarrollador y no has pasado por el proceso público de Google. No significa que tu app sea peligrosa. Solo tú verás esa pantalla.
+        </div>
+
+        <h4>4.4 — Copiar y guardar tu URL</h4>
+        <ol class="pasos">
+          <li>Cuando termine la implementación, aparecerá un enlace largo tipo <code>https://script.google.com/macros/s/AKfy.../exec</code>.</li>
+          <li>Haz clic en <strong>Copiar</strong>.</li>
+          <li>Pega esa URL en un lugar seguro (por ejemplo, en la pestaña <em>Config</em> de tu hoja o en una nota).</li>
+        </ol>
+        <div class="resultado"><strong>Resultado esperado:</strong> tienes guardada una URL que termina en <code>/exec</code>. Esa es la dirección de tu agenda.</div>
+        <div class="card warn">
+          <strong>⚠️ Importante:</strong> no compartas todavía la URL en redes sociales si vas a usar Netlify (Paso 6). Primero prueba todo bien.
+        </div>
+
+        <div class="sifalla"><strong>Si algo sale mal:</strong> si te equivocaste en "Quién tiene acceso", ve a <strong>Implementar → Administrar implementaciones → ✏️ Editar</strong> y corrígelo. Si perdiste la URL, entra otra vez a <em>Administrar implementaciones</em> y cópiala desde ahí.</div>
+      </div>
+    </article>
+
+    <!-- ============ PASO 5 ============ -->
+    <article class="stepcard" id="paso5">
+      <header class="stepcard-head">
+        <span class="stepnum">5</span>
+        <h3>Prueba de reservas y uso del panel de administración</h3>
+      </header>
+      <div class="stepcard-body">
+        <p class="objetivo"><strong>Objetivo:</strong> comprobar que todo funciona. Simularás ser un cliente y luego entrarás como administrador.</p>
+
+        <h4>5.1 — Hacer una reserva de prueba</h4>
+        <ol class="pasos">
+          <li>Pega la URL de tu agenda en el navegador y ábrela.</li>
+          <li>Comprueba que ves la pantalla pública con tus servicios, especialistas y horarios.</li>
+          <li>Elige un servicio.</li>
+          <li>Elige un especialista.</li>
+          <li>Elige un día y una hora disponibles.</li>
+          <li>Rellena tus datos de prueba (nombre "Prueba", tu WhatsApp, etc.).</li>
+          <li>Confirma la reserva.</li>
+        </ol>
+        <div class="resultado"><strong>Resultado esperado:</strong> aparece un mensaje de confirmación en pantalla.</div>
+
+        <h4>5.2 — Verificar que la reserva llegó a la hoja</h4>
+        <ol class="pasos">
+          <li>Vuelve a tu hoja <strong>BD Agenda</strong> en Google Sheets.</li>
+          <li>Abre la pestaña <strong>Reservas</strong>.</li>
+        </ol>
+        <div class="resultado"><strong>Resultado esperado:</strong> ahí aparece tu cita de prueba con fecha, hora y cliente. Esto significa que todo está conectado correctamente.</div>
+
+        <h4>5.3 — Ingresar al Panel de Administración</h4>
+        <ol class="pasos">
+          <li>Copia la URL de tu agenda.</li>
+          <li>Añade al final <code>?admin=1</code> (o <code>?admin=true</code>, según lo indique tu sistema).</li>
+          <li>Presiona Enter.</li>
+          <li>Escribe el PIN que creaste en el Paso 3.5.</li>
+          <li>Confirma.</li>
+        </ol>
+        <div class="copyRow">
+          <code>?admin=1</code>
+          <button class="btn small copyBtn" data-copy="?admin=1">COPIAR</button>
+        </div>
+        <p>La dirección completa quedaría así:</p>
+        <pre><code>https://script.google.com/macros/s/.../exec?admin=1</code></pre>
+
+        <h4>5.4 — Confirmar o cancelar citas</h4>
+        <ol class="pasos">
+          <li>Dentro del panel, localiza tu cita de prueba en la lista.</li>
+          <li>Haz clic en el botón <strong>Confirmar</strong> de esa cita.</li>
+          <li>Observa si se abre automáticamente un chat de WhatsApp con el mensaje prellenado.</li>
+        </ol>
+        <div class="resultado"><strong>Resultado esperado:</strong> la cita cambia de estado y, si tienes la notificación configurada, se abre WhatsApp con el mensaje listo para enviar.</div>
+        <p>Según tu plantilla, desde el panel también podrás <strong>cancelar citas</strong>, <strong>reasignar horarios</strong> y <strong>ver estadísticas</strong>.</p>
+
+        <div class="card accent">
+          💡 <strong>Consejo rápido:</strong> borra las reservas de prueba de la pestaña <em>Reservas</em> cuando termines, para no ensuciar tu historial real.
+        </div>
+
+        <div class="sifalla"><strong>Si algo sale mal:</strong> si la reserva no llega a la hoja, revisa que el archivo se llame exactamente <code>BD Agenda</code> y que sea una Hoja de cálculo de Google (no un <code>.xlsx</code>). Si el panel no acepta tu PIN, vuelve al Paso 3.5 y comprueba que la propiedad se llama exactamente <code>admin_pin</code>.</div>
+      </div>
+    </article>
+
+    <!-- ============ PASO 6 ============ -->
+    <article class="stepcard" id="paso6">
+      <header class="stepcard-head">
+        <span class="stepnum">6</span>
+        <h3>Crear una URL profesional gratis con Netlify (opcional)</h3>
+      </header>
+      <div class="stepcard-body">
+        <p class="objetivo"><strong>Objetivo:</strong> cambiar tu URL larga de Google por una dirección corta y bonita como <code>mibarbieria.netlify.app</code>.</p>
+        <p><strong>Explicación sencilla:</strong> Netlify es como un "hosting gratuito para principiantes": subes una carpeta y te da un enlace bonito.</p>
+
+        <h4>6.1 — Crear cuenta gratis</h4>
+        <ol class="pasos">
+          <li>Ve a <code>https://www.netlify.com</code>.</li>
+          <li>Haz clic en <strong>Sign up</strong>.</li>
+          <li>Regístrate con Google, GitHub o email.</li>
+          <li>Confirma tu correo si te lo pide.</li>
+        </ol>
+
+        <h4>6.2 — Editar el <code>index.html</code> de Netlify</h4>
+        <p>El archivo <code>index.html</code> de la carpeta <em>Netlify</em> contiene una mini-página que redirige a tu agenda. Debes pegarle TU URL de Apps Script.</p>
+        <ol class="pasos">
+          <li>Ve a la carpeta <code>AgendaVirtual → Netlify</code>.</li>
+          <li>Abre <code>index.html</code> con Bloc de notas (Windows) o TextEdit (Mac).</li>
+          <li>Busca una línea parecida a <code>window.location.href = "PEGA_AQUI_TU_URL";</code>.</li>
+          <li>Sustituye <code>PEGA_AQUI_TU_URL</code> por tu URL larga de Apps Script del Paso 4.4.
+            <span class="motivo">Respeta las comillas <code>"</code> y no borres el punto y coma final.</span></li>
+          <li>Guarda el archivo.</li>
+        </ol>
+        <div class="copyRow">
+          <code>window.location.href = "PEGA_AQUI_TU_URL";</code>
+          <button class="btn small copyBtn" data-copy='window.location.href = "PEGA_AQUI_TU_URL";'>COPIAR</button>
+        </div>
+
+        <h4>6.3 — Subir a Netlify</h4>
+        <ol class="pasos">
+          <li>Entra a tu cuenta de Netlify.</li>
+          <li>Ve a <strong>Sites → Add new site → Deploy manually</strong>.</li>
+          <li>Arrastra la carpeta <strong>Netlify</strong> (con el <code>index.html</code> ya editado dentro) al recuadro que aparece.</li>
+          <li>Espera 10–20 segundos mientras Netlify procesa los archivos.</li>
+          <li>Ve a <strong>Site settings → Change site name</strong>.</li>
+          <li>Escribe el nombre que quieras, por ejemplo <code>mibarbieria</code>.</li>
+        </ol>
+        <div class="resultado"><strong>Resultado esperado:</strong> tu URL queda como <code>https://mibarbieria.netlify.app</code>.</div>
+
+        <h4>6.4 — Probarla y usarla</h4>
+        <ol class="pasos">
+          <li>Abre tu nueva URL en el navegador.</li>
+          <li>Comprueba que te redirige a tu agenda.</li>
+          <li>Compártela en tu Instagram, WhatsApp Business, Google Maps y tu tarjeta de presentación.</li>
+        </ol>
+
+        <div class="card accent">
+          💡 <strong>Consejo rápido:</strong> si más adelante actualizas tu código en Apps Script, la URL larga cambia <strong>solo si creas una nueva implementación</strong>. Si solo editas la implementación existente (<em>Implementar → Administrar implementaciones → Editar ✏️</em>), la URL se mantiene. Así no tienes que volver a tocar Netlify.
+        </div>
+
+        <div class="sifalla"><strong>Si algo sale mal:</strong> si la página de Netlify se queda en blanco, revisa que las comillas de la URL estén bien cerradas y que hayas guardado el archivo antes de arrastrar la carpeta. Si el nombre ya está ocupado, Netlify te lo dirá y tendrás que elegir otro.</div>
+      </div>
+    </article>
+
+    <!-- ============ PASO 7 ============ -->
+    <article class="stepcard" id="paso7">
+      <header class="stepcard-head">
+        <span class="stepnum">7</span>
+        <h3>Mantenimiento: cambios, bloqueos y seguridad</h3>
+      </header>
+      <div class="stepcard-body">
+        <p class="objetivo"><strong>Objetivo:</strong> saber cómo mantener tu agenda viva sin volver a tocar código.</p>
+
+        <h4>7.1 — Cambiar precios, servicios u horarios</h4>
+        <ol class="pasos">
+          <li>Abre tu hoja <code>BD Agenda</code> en Google Sheets.</li>
+          <li>Ve a la pestaña que quieras modificar.</li>
+          <li>Edita el dato (precio, duración, día, hora…).</li>
+          <li>Espera unos segundos a que Google guarde solo.</li>
+          <li>Recarga la agenda del cliente para ver los cambios.</li>
+        </ol>
+        <div class="card accent">No tienes que tocar código. Es como editar el menú de un restaurante: cambias el papel y ya.</div>
+
+        <h4>7.2 — Bloquear un día completo</h4>
+        <ol class="pasos">
+          <li>Ve a la pestaña <strong>Bloqueos</strong>.</li>
+          <li>Escribe la fecha que quieres bloquear.</li>
+          <li>Añade una nota, por ejemplo "Feriado nacional" o "Boda familiar".</li>
+        </ol>
+        <div class="resultado"><strong>Resultado esperado:</strong> ese día aparece como no disponible en la agenda pública.</div>
+
+        <h4>7.3 — Proteger mejor tu PIN</h4>
+        <ul>
+          <li>❌ Nunca uses <code>1234</code>, <code>0000</code>, tu año de nacimiento o <code>1111</code>.</li>
+          <li>✅ Usa un número de 4 a 6 cifras que no signifique nada para nadie.</li>
+          <li>✅ No lo compartas por WhatsApp ni lo escribas en la agenda pública.</li>
+          <li>✅ Cámbialo cada 6 meses.</li>
+          <li>✅ Si sospechas que alguien lo descubrió, cámbialo inmediatamente.</li>
+        </ul>
+        <p>Para cambiarlo:</p>
+        <ol class="pasos">
+          <li>Ve a Apps Script.</li>
+          <li>Haz clic en ⚙️ <strong>Configuración del proyecto</strong>.</li>
+          <li>Entra en <strong>Propiedades del script</strong>.</li>
+          <li>Edita el valor de <code>admin_pin</code>.</li>
+          <li>Guarda.</li>
+        </ol>
+
+        <h4>7.4 — Recuperar algo borrado por error</h4>
+        <ol class="pasos">
+          <li>En Google Sheets, ve a <strong>Archivo → Historial de versiones → Ver historial de versiones</strong>.</li>
+          <li>Elige una versión anterior.</li>
+          <li>Restáurala.</li>
+        </ol>
+        <p class="hint">También funciona en Google Drive: clic derecho sobre un archivo → <strong>Gestionar versiones</strong>.</p>
+
+        <div class="sifalla"><strong>Si algo sale mal:</strong> si los cambios no aparecen en la agenda pública, espera 1 minuto y recarga con <code>Ctrl+F5</code>. Si aún no aparecen, revisa que editaste la hoja correcta (<code>BD Agenda</code>) y no otra copia.</div>
+      </div>
+    </article>
+
+  </section>
+
+  <!-- ============================================================
+       PANEL: PRÁCTICA
+       ============================================================ -->
+  <section class="panel" id="p-practica" role="tabpanel">
+
+    <h1>🎯 Práctica guiada</h1>
+    <p>Estos ejercicios refuerzan lo aprendido. Intenta resolverlos <strong>antes</strong> de abrir la solución.</p>
+
+    <div class="acc">
+      <button class="acc-head">Ejercicio 1 — Preparar el terreno en Drive</button>
+      <div class="acc-body">
+        <p><strong>Enunciado:</strong> crea en Google Drive una carpeta llamada <em>Mi Agenda Virtual</em> y sube dentro el archivo <code>BaseDatos.xlsx</code>. Después conviértelo a Hoja de cálculo de Google y ponle el nombre <code>BD Agenda</code>.</p>
+        <p><strong>Solución explicada:</strong></p>
+        <ol>
+          <li>Entra en <code>drive.google.com</code> con tu cuenta de Google.</li>
+          <li>Menú lateral → <strong>+ Nuevo → Carpeta nueva</strong> → escribe "Mi Agenda Virtual" → <strong>Crear</strong>.</li>
+          <li>Entra en la carpeta con doble clic.</li>
+          <li><strong>+ Nuevo → Subir archivo</strong> → selecciona <code>BaseDatos.xlsx</code>.</li>
+          <li>Doble clic sobre el archivo subido → <strong>Abrir con Google Sheets</strong>.</li>
+          <li><strong>Archivo → Guardar como hoja de cálculo de Google</strong>.</li>
+          <li>Cierra la vista previa y renombra la copia nueva como <code>BD Agenda</code>.</li>
+        </ol>
+        <p><strong>Por qué se hace así:</strong> Apps Script solo entiende el formato nativo de Google. El <code>.xlsx</code> es un idioma que no habla.</p>
+      </div>
+    </div>
+
+    <div class="acc">
+      <button class="acc-head">Ejercicio 2 — Eliminar el archivo que sobra</button>
+      <div class="acc-body">
+        <p><strong>Enunciado:</strong> después de convertir el archivo, deja en la carpeta únicamente la Hoja de cálculo de Google.</p>
+        <p><strong>Solución explicada:</strong></p>
+        <ol>
+          <li>Asegúrate de que <code>BD Agenda</code> está guardada.</li>
+          <li>Vuelve a la carpeta <em>Mi Agenda Virtual</em>.</li>
+          <li>Selecciona <code>BaseDatos.xlsx</code>.</li>
+          <li>Clic derecho → <strong>Eliminar</strong>.</li>
+        </ol>
+        <p><strong>Por qué:</strong> si dejas las dos versiones, más adelante editarás la equivocada y pensarás que "el sistema no funciona".</p>
+      </div>
+    </div>
+
+    <div class="acc">
+      <button class="acc-head">Ejercicio 3 — Configurar tu zona horaria</button>
+      <div class="acc-body">
+        <p><strong>Enunciado:</strong> edita el manifiesto para que las citas se guarden con la hora de tu ciudad.</p>
+        <p><strong>Solución explicada:</strong></p>
+        <ol>
+          <li>En Apps Script, ve a ⚙️ <strong>Configuración del proyecto</strong>.</li>
+          <li>Marca <strong>“Mostrar el archivo de manifiesto appsscript.json en el editor”</strong>.</li>
+          <li>Vuelve a <strong>Editor</strong> y abre <code>appsscript.json</code>.</li>
+          <li>Localiza <code>"timeZone"</code>.</li>
+          <li>Sustituye el valor por el tuyo, por ejemplo <code>"Europe/Madrid"</code>.</li>
+          <li>Guarda con <code>Ctrl+S</code>.</li>
+        </ol>
+        <p><strong>Por qué:</strong> sin la zona horaria correcta, una cita de las 15:00 podría guardarse como las 21:00 y confundir a todos.</p>
+      </div>
+    </div>
+
+    <div class="acc">
+      <button class="acc-head">Ejercicio 4 — Crear un PIN seguro</button>
+      <div class="acc-body">
+        <p><strong>Enunciado:</strong> crea la propiedad del script que protege tu panel de administración.</p>
+        <p><strong>Solución explicada:</strong></p>
+        <ol>
+          <li>Apps Script → ⚙️ <strong>Configuración del proyecto</strong>.</li>
+          <li>Sección <strong>Propiedades del script</strong> → <strong>Agregar propiedad del script</strong>.</li>
+          <li>Propiedad: <code>admin_pin</code> (exactamente así).</li>
+          <li>Valor: un número de 4 a 6 cifras que solo sepas tú.</li>
+          <li><strong>Guardar propiedad del script</strong>.</li>
+        </ol>
+        <p><strong>Error típico:</strong> escribir <code>Admin_Pin</code> o <code>admin-pin</code>. El sistema busca el nombre exacto y no lo encontrará.</p>
+      </div>
+    </div>
+
+    <div class="acc">
+      <button class="acc-head">Ejercicio 5 — Reserva de prueba completa</button>
+      <div class="acc-body">
+        <p><strong>Enunciado:</strong> haz una reserva como si fueras un cliente y verifica que se guarda.</p>
+        <p><strong>Solución explicada:</strong></p>
+        <ol>
+          <li>Abre la URL de tu agenda terminada en <code>/exec</code>.</li>
+          <li>Elige un servicio.</li>
+          <li>Elige un especialista.</li>
+          <li>Elige día y hora.</li>
+          <li>Rellena los datos con el nombre "Prueba".</li>
+          <li>Confirma la reserva.</li>
+          <li>Abre la hoja <code>BD Agenda</code> → pestaña <strong>Reservas</strong>.</li>
+          <li>Comprueba que tu cita aparece en la última fila.</li>
+          <li>Borra la fila de prueba al terminar.</li>
+        </ol>
+        <p><strong>Por qué:</strong> esta prueba confirma que las tres piezas (Web App → Apps Script → Sheets) están bien conectadas.</p>
+      </div>
+    </div>
+
+    <div class="acc">
+      <button class="acc-head">Ejercicio 6 — Bloquear un día festivo</button>
+      <div class="acc-body">
+        <p><strong>Enunciado:</strong> bloquea el próximo día festivo para que no se pueda reservar.</p>
+        <p><strong>Solución explicada:</strong></p>
+        <ol>
+          <li>Abre <code>BD Agenda</code>.</li>
+          <li>Ve a la pestaña <strong>Bloqueos</strong>.</li>
+          <li>Escribe la fecha del festivo.</li>
+          <li>Añade una nota: "Feriado nacional".</li>
+          <li>Recarga la agenda pública y comprueba que ese día sale no disponible.</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="acc">
+      <button class="acc-head">Ejercicio 7 — Verdadero o falso</button>
+      <div class="acc-body">
+        <p><strong>Enunciado:</strong> responde y justifica.</p>
+        <ol>
+          <li>La agenda deja de funcionar si apago mi computadora.</li>
+          <li>Los clientes pueden modificar mi base de datos.</li>
+          <li>Puedo cambiar los precios sin tocar código.</li>
+          <li>Necesito pagar hosting para tener la agenda online.</li>
+        </ol>
+        <p><strong>Solución:</strong></p>
+        <ol>
+          <li><strong>FALSO.</strong> Todo vive en los servidores de Google. La agenda funciona 24/7 mientras tu cuenta de Google exista.</li>
+          <li><strong>FALSO.</strong> Los clientes solo ven la pantalla pública (días y horas libres). Tu hoja solo la ves tú.</li>
+          <li><strong>VERDADERO.</strong> Se editan directamente en la pestaña Servicios de la hoja.</li>
+          <li><strong>FALSO.</strong> Google Sheets, Apps Script y Netlify tienen plan gratuito suficiente para un negocio pequeño o mediano.</li>
+        </ol>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ============================================================
+       PANEL: ERRORES
+       ============================================================ -->
+  <section class="panel" id="p-errores" role="tabpanel">
+
+    <h1>⚠️ Errores frecuentes y cómo corregirlos</h1>
+    <p>El 90 % de los problemas son siempre los mismos. Búsca el tuyo aquí antes de frustrarte.</p>
+
+    <table>
+      <thead>
+        <tr><th>Síntoma</th><th>Causa probable</th><th>Solución</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>El panel no reconoce mi PIN</td>
+          <td>La propiedad se llama distinto (<code>Admin_Pin</code>, <code>adminpin</code>, <code>admin-pin</code>)</td>
+          <td>Borra la propiedad y créala de nuevo escribiendo exactamente <code>admin_pin</code> en minúsculas y con guion bajo.</td>
+        </tr>
+        <tr>
+          <td>La agenda muestra horas equivocadas</td>
+          <td>Zona horaria mal configurada en <code>appsscript.json</code></td>
+          <td>Activa el manifiesto, abre <code>appsscript.json</code> y cambia <code>timeZone</code> por el de tu ciudad.</td>
+        </tr>
+        <tr>
+          <td>Error "no se encuentra el archivo index"</td>
+          <td>El archivo HTML se llama <code>Index</code> o <code>index.html</code> con mayúsculas o extensión duplicada</td>
+          <td>Renombra el archivo a exactamente <code>index</code> (sin extensión). Lo mismo con <code>admin</code>, <code>estilobase</code> e <code>iconobase64</code>.</td>
+        </tr>
+        <tr>
+          <td>Las reservas no aparecen en la hoja</td>
+          <td>Sigues teniendo el <code>.xlsx</code> en vez de la Hoja de cálculo de Google</td>
+          <td>Convierte el archivo con <em>Archivo → Guardar como hoja de cálculo de Google</em> y elimina el <code>.xlsx</code>.</td>
+        </tr>
+        <tr>
+          <td>El cliente ve un error de permisos</td>
+          <td>"Quién tiene acceso" no está en <em>Cualquier persona</em></td>
+          <td>Implementar → Administrar implementaciones → ✏️ Editar → cambia el acceso a <strong>Cualquier persona</strong>.</td>
+        </tr>
+        <tr>
+          <td>Google muestra "aplicación no verificada"</td>
+          <td>Es tu propia app y no ha pasado el proceso público de Google</td>
+          <td>Es normal. Haz clic en <strong>Configuración avanzada → Ir a [proyecto] (no seguro) → Permitir</strong>.</td>
+        </tr>
+        <tr>
+          <td>Cambié el código y la URL dejó de funcionar</td>
+          <td>Creaste una <strong>nueva implementación</strong> en vez de editar la existente</td>
+          <td>Usa siempre <em>Implementar → Administrar implementaciones → Editar ✏️</em> para conservar la misma URL.</td>
+        </tr>
+        <tr>
+          <td>La página de Netlify se queda en blanco</td>
+          <td>La URL no se pegó bien entre comillas en <code>index.html</code></td>
+          <td>Abre el <code>index.html</code>, comprueba las comillas y el punto y coma, guarda y vuelve a subir la carpeta.</td>
+        </tr>
+        <tr>
+          <td>El día que quiero ofrecer no aparece disponible</td>
+          <td>No está dentro de la pestaña Horarios, o está en Bloqueos</td>
+          <td>Revisa <strong>Horarios</strong> (que el día y la franja existan) y <strong>Bloqueos</strong> (que no haya una ausencia ese día).</td>
+        </tr>
+        <tr>
+          <td>Borqué algo sin querer</td>
+          <td>Edición accidental</td>
+          <td><strong>Archivo → Historial de versiones → Ver historial de versiones</strong> y restaura una versión anterior.</td>
+        </tr>
+        <tr>
+          <td>Los cambios en la hoja no se ven en la agenda</td>
+          <td>Caché del navegador</td>
+          <td>Recarga con <code>Ctrl+F5</code> (Windows) o <code>Cmd+Shift+R</code> (Mac) y espera un minuto.</td>
+        </tr>
+        <tr>
+          <td>Puse el PIN pero cualquiera puede entrar</td>
+          <td>Compartiste la URL con <code>?admin=1</code> en redes sociales</td>
+          <td>Comparte siempre la URL <strong>sin</strong> <code>?admin=1</code>. Y cambia el PIN inmediatamente.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>🚫 Errores de seguridad que debes evitar</h2>
+    <div class="card err">
+      <ul style="margin:0">
+        <li>Usar <code>1234</code>, <code>0000</code>, <code>1111</code> o tu año de nacimiento como PIN.</li>
+        <li>Compartir el PIN por WhatsApp, Instagram o en la agenda pública.</li>
+        <li>Publicar la URL con <code>?admin=1</code>.</li>
+        <li>Dar acceso de edición a tu hoja <code>BD Agenda</code> a personas que no lo necesitan.</li>
+        <li>No cambiar el PIN nunca.</li>
+      </ul>
+    </div>
+
+    <h2>🧯 Protocolo de rescate en 4 pasos</h2>
+    <div class="card accent">
+      <ol style="margin:0">
+        <li><strong>Respira.</strong> Casi nada se rompe de forma irreversible.</li>
+        <li><strong>Identifica</strong> en qué paso ocurrió el fallo.</li>
+        <li><strong>Revisa</strong> los nombres exactos: archivos, pestañas y propiedades.</li>
+        <li><strong>Vuelve a hacer</strong> ese paso concreto desde cero. No repitas todo.</li>
+      </ol>
+    </div>
+
+  </section>
+
+  <!-- ============================================================
+       PANEL: FAQ
+       ============================================================ -->
+  <section class="panel" id="p-faq" role="tabpanel">
+
+    <h1>❓ Preguntas frecuentes</h1>
+
+    <div class="acc">
+      <button class="acc-head">¿Cómo cambio precios, servicios u horarios?</button>
+      <div class="acc-body">
+        <p>Directamente en tu hoja <code>BD Agenda</code>:</p>
+        <ul>
+          <li><strong>Servicios</strong> → edita precios, duración o agrega nuevos.</li>
+          <li><strong>Horarios</strong> → cambia días y horas.</li>
+          <li><strong>Bloqueos</strong> → agrega festivos o vacaciones.</li>
+          <li><strong>Especialistas</strong> → suma o quita personal.</li>
+        </ul>
+        <p>No tienes que tocar código. Al recargar la agenda del cliente, todo aparece actualizado automáticamente.</p>
+      </div>
+    </div>
+
+    <div class="acc">
+      <button class="acc-head">¿Y si quiero bloquear un día completo?</button>
+      <div class="acc-body">
+        <p>Ve a la pestaña <strong>Bloqueos</strong>, agrega la fecha y una nota ("Feriado nacional", "Boda familiar"). El día aparecerá como no disponible en la agenda pública.</p>
+      </div>
+    </div>
+
+    <div class="acc">
+      <button class="acc-head">¿Cómo protejo mejor mi PIN?</button>
+      <div class="acc-body">
+        <ul>
+          <li>❌ Nunca uses <code>1234</code>, <code>0000</code>, tu año de nacimiento o <code>1111</code>.</li>
+          <li>✅ Usa un número de 4–6 cifras que no signifique nada para nadie.</li>
+          <li>✅ No lo compartas por WhatsApp ni lo escribas en la agenda pública.</li>
+          <li>✅ Cámbialo cada 6 meses: Apps Script → ⚙️ Configuración → Propiedades del script → edita <code>admin_pin</code>.</li>
+          <li>✅ Si sospechas que alguien lo descubrió, cámbialo inmediatamente.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="acc">
+      <button class="acc-head">¿La agenda funciona si apago mi computadora?</button>
+      <div class="acc-body">
+        <p>Sí. Todo vive en los servidores de Google. Tu agenda queda disponible 24/7 mientras tu cuenta de Google exista.</p>
+      </div>
+    </div>
+
+    <div class="acc">
+      <button class="acc-head">¿Los clientes pueden modificar mi base de datos?</button>
+      <div class="acc-body">
+        <p>No. Ellos solo ven la pantalla pública (días y horas libres). Tu hoja <code>BD Agenda</code> solo la ves tú.</p>
+      </div>
+    </div>
+
+    <div class="acc">
+      <button class="acc-head">¿Cuántas reservas soporta?</button>
+      <div class="acc-body">
+        <p>Miles. Google Sheets aguanta muchísimo para un negocio pequeño o mediano. Si algún día creces demasiado, ahí sí conviene pensar en un sistema profesional, pero para el 99 % de barberías, clínicas y estéticas, esto es más que suficiente.</p>
+      </div>
+    </div>
+
+    <div class="acc">
+      <button class="acc-head">¿Qué hago si borré algo por error?</button>
+      <div class="acc-body">
+        <ol>
+          <li>En Google Sheets, ve a <strong>Archivo → Historial de versiones → Ver historial de versiones</strong>.</li>
+          <li>Verás todas las versiones anteriores.</li>
+          <li>Elige una y restáurala.</li>
+        </ol>
+        <p>Igual funciona en Google Drive: clic derecho sobre un archivo → <strong>Gestionar versiones</strong>.</p>
+      </div>
+    </div>
+
+    <div class="acc">
+      <button class="acc-head">¿Puedo cambiar el color o el logo de la agenda?</button>
+      <div class="acc-body">
+        <p>Sí, en la pestaña <strong>Config</strong> de la hoja. Ahí hay campos de color y también puedes configurar los mensajes automáticos que recibirán tus clientes por WhatsApp.</p>
+      </div>
+    </div>
+
+    <div class="acc">
+      <button class="acc-head">¿Tengo que pagar algo?</button>
+      <div class="acc-body">
+        <p>No. Google Sheets, Google Apps Script y Netlify tienen planes gratuitos suficientes para este uso. No necesitas hosting ni dominio de pago.</p>
+      </div>
+    </div>
+
+    <div class="acc">
+      <button class="acc-head">Actualicé el código, ¿tengo que rehacer Netlify?</button>
+      <div class="acc-body">
+        <p>No, si editas la implementación existente. La URL larga cambia <strong>solo si creas una implementación nueva</strong>. Usa siempre <em>Implementar → Administrar implementaciones → Editar ✏️</em>.</p>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ============================================================
+       PANEL: RESUMEN
+       ============================================================ -->
+  <section class="panel" id="p-resumen" role="tabpanel">
+
+    <h1>📌 Resumen final</h1>
+
+    <div class="card ok">
+      <h3 style="margin-top:0">🎉 ¡Felicidades! Ya tienes tu Agenda Virtual funcionando</h3>
+      <p>Has construido, sin escribir ni una línea de código, un sistema profesional que:</p>
+      <ul>
+        <li>✅ Recibe reservas 24/7.</li>
+        <li>✅ Avisa a tus clientes por WhatsApp.</li>
+        <li>✅ Te da un panel de administración protegido con PIN.</li>
+        <li>✅ Se actualiza con solo editar tu hoja de cálculo.</li>
+        <li>✅ Vive en una URL bonita y gratis.</li>
+      </ul>
+    </div>
+
+    <h2>🗺️ El recorrido completo en 7 pasos</h2>
+    <table>
+      <thead><tr><th>Paso</th><th>Qué hiciste</th><th>Herramienta</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Descargar y descomprimir el paquete</td><td>Tu computadora</td></tr>
+        <tr><td>2</td><td>Subir y convertir la base de datos</td><td>Google Drive / Sheets</td></tr>
+        <tr><td>3</td><td>Instalar código, manifiesto y PIN</td><td>Apps Script</td></tr>
+        <tr><td>4</td><td>Publicar la aplicación web</td><td>Apps Script</td></tr>
+        <tr><td>5</td><td>Probar reservas y panel de administración</td><td>Navegador + Sheets</td></tr>
+        <tr><td>6</td><td>Crear la URL bonita (opcional)</td><td>Netlify</td></tr>
+        <tr><td>7</td><td>Mantener, bloquear días y proteger el PIN</td><td>Google Sheets</td></tr>
+      </tbody>
+    </table>
+
+    <h2>🔑 Los 5 datos que debes recordar de memoria</h2>
+    <div class="grid two">
+      <div class="card">
+        <ul style="margin:0">
+          <li>El nombre de la hoja: <code>BD Agenda</code></li>
+          <li>La propiedad del PIN: <code>admin_pin</code></li>
+          <li>El acceso al panel: <code>?admin=1</code></li>
+        </ul>
+      </div>
+      <div class="card">
+        <ul style="margin:0">
+          <li>La URL pública termina en <code>/exec</code></li>
+          <li>Los 4 HTML: <code>index</code>, <code>admin</code>, <code>estilobase</code>, <code>iconobase64</code></li>
+          <li>La hoja <em>Reservas</em> nunca se escribe a mano</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2>✅ Lo que sigue</h2>
+    <div class="card accent">
+      <ul style="margin:0">
+        <li>Comparte tu enlace en Instagram, WhatsApp Business, Google My Business y tu tarjeta de presentación.</li>
+        <li>Personaliza los mensajes automáticos para que tengan tu tono de voz.</li>
+        <li>Revisa una vez al día la pestaña <strong>Reservas</strong> para confirmar citas.</li>
+        <li>Cambia el PIN cada 6 meses.</li>
+      </ul>
+    </div>
+
+    <h2>💪 Último consejo</h2>
+    <div class="card">
+      <p style="margin:0;font-size:1.05rem">La tecnología no es magia, es método. Ya diste el paso más difícil: empezar. Lo demás se aprende usándolo.</p>
+      <p style="margin:.8em 0 0"><strong>¡Mucho éxito con tu negocio! 🚀</strong></p>
+    </div>
+
+  </section>
+
+  <!-- ============================================================
+       PANEL: FUENTES
+       ============================================================ -->
+  <section class="panel" id="p-fuentes" role="tabpanel">
+
+    <h1>📚 Fuentes</h1>
+    <p>Este tutorial se construyó a partir de los siguientes documentos base. No se añadieron funciones, datos ni procedimientos que no estuvieran respaldados por ellos.</p>
+
+    <div class="card">
+      <h3 style="margin-top:0">Documento base del contenido</h3>
+      <p><strong>Título:</strong> 📅 Agenda Virtual de Reservas Gratis con Google Sheets + Apps Script + Netlify</p>
+      <p><strong>Subtítulo:</strong> Guía paso a paso para dueños de negocios sin conocimientos técnicos.</p>
+      <p><strong>Contenido utilizado:</strong></p>
+      <ul>
+        <li>Paso 1 — Descarga y preparación de los archivos.</li>
+        <li>Paso 2 — Subir y configurar la base de datos en Google Drive.</li>
+        <li>Paso 3 — Instalación del código en Google Apps Script.</li>
+        <li>Paso 4 — Publicación e implementación de la aplicación web.</li>
+        <li>Paso 5 — Prueba de reservas y uso del panel de administración.</li>
+        <li>Paso 6 — Crear una URL profesional gratis con Netlify (opcional).</li>
+        <li>Paso 7 — Preguntas frecuentes y consejos útiles.</li>
+      </ul>
+    </div>
+
+    <h2>🔗 Tu Agenda Online con Google Sheets y Apps Script</h2>
+    <div class="card accent">
+      <h3 style="margin-top:0">Sitio oficial del sistema</h3>
+      <p>Página oficial de "Tu Agenda Online con Google Sheets y Apps Script". Desde aquí puedes consultar la información del proyecto, descargar el paquete y ver la documentación actualizada.</p>
+      <p>
+        <a class="resource-link"
+           href="https://soadel.cl/agendavirtual/"
+           target="_blank"
+           rel="noopener noreferrer">https://soadel.cl/agendavirtual/</a>
+      </p>
+
+      <h3>🎬 Video tutorial en YouTube</h3>
+      <p>Recorrido en video paso a paso del sistema, ideal para acompañar este tutorial escrito y ver el proceso en acción.</p>
+      <p>
+        <a class="resource-link"
+           href="https://youtube.com/watch?v=uU_ynS01joY&is=z6H5f-s6v2CJYGv9"
+           target="_blank"
+           rel="noopener noreferrer">https://youtube.com/watch?v=uU_ynS01joY&amp;is=z6H5f-s6v2CJYGv9</a>
+      </p>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0">Especificaciones del tutorial</h3>
+      <p><strong>Documento:</strong> <code>PROMPT_MAESTRO_TUTORIALES_HTML.txt</code></p>
+      <p>Define las reglas de estructura, estilo pedagógico, paleta visual, pestañas, SVG animado reutilizable e interactividad de este tutorial.</p>
+    </div>
+
+    <div class="card warn">
+      <h3 style="margin-top:0">Información no incluida en el documento base</h3>
+      <p>Los siguientes elementos son <strong>ayudas didácticas añadidas</strong> para facilitar el aprendizaje y no forman parte literal del documento original:</p>
+      <ul>
+        <li>Los diagramas explicativos (los esquemas visuales son una forma de representar el contenido del texto).</li>
+        <li>La tabla comparativa de errores frecuentes (reorganiza y agrupa las advertencias ya presentes en el texto original).</li>
+        <li>Los ejercicios prácticos (reformulan acciones que el documento ya describe).</li>
+        <li>La pestaña de checklist de aprendizaje.</li>
+      </ul>
+      <p style="margin-bottom:0">El documento original <strong>no especifica</strong> la versión exacta de las plantillas, el número de servicios máximos soportados, ni el contenido literal de los archivos de código <code>code.gs</code>, <code>index.html</code>, <code>admin.html</code>, <code>estilobase.html</code> e <code>iconobase64.html</code>.</p>
+    </div>
+
+  </section>
+
+  <!-- ============================================================
+       PANEL: CRÉDITOS
+       ============================================================ -->
+  <section class="panel" id="p-creditos" role="tabpanel">
+
+    <h1>👤 Créditos</h1>
+
+    <div class="card svg-credits" style="padding:12px">
+      <div class="hero-svg-mount" data-svg-hero="true" role="img" aria-label="Animación del sistema de agenda virtual: una reserva pasa del móvil del cliente al calendario y se confirma por WhatsApp."></div>
+    </div>
+    <p class="hint" style="margin-top:8px">Así funciona, de forma visual, el sistema de agenda virtual que aprenderás a montar.</p>
+
+    <div class="card" style="text-align:center;padding:28px 16px">
+      <p class="credit-name">Rubén Sbarsky</p>
+      <p class="credit-role">Autor del tutorial</p>
+      <p style="margin:0 0 6px;color:var(--muted);font-size:.85rem">Fecha y hora de creación</p>
+      <p class="credit-date">01/10/2026 — 10:15:22</p>
+      <p style="margin:12px 0 0;color:var(--muted);font-size:.82rem">Versión del archivo: <strong>V006</strong></p>
+    </div>
+
+    <h2>Sobre este tutorial</h2>
+    <div class="card">
+      <p>Tutorial HTML interactivo creado a partir del documento <em>“Agenda Virtual de Reservas Gratis con Google Sheets + Apps Script + Netlify”</em>.</p>
+      <p>El contenido se reorganizó con un enfoque pedagógico para principiantes: primero el concepto, después la acción. Cada procedimiento incluye objetivo, explicación sencilla, pasos numerados con una sola acción por paso, resultado esperado y qué hacer si algo sale mal.</p>
+    </div>
+
+    <h2>Características técnicas de este tutorial</h2>
+    <table>
+      <thead><tr><th>Elemento</th><th>Detalle</th></tr></thead>
+      <tbody>
+        <tr><td>Formato</td><td>Un único archivo HTML autocontenido</td></tr>
+        <tr><td>Dependencias externas</td><td>Ninguna (sin CDN, sin librerías, sin fuentes externas)</td></tr>
+        <tr><td>Funciona sin conexión</td><td>Sí</td></tr>
+        <tr><td>Tecnologías</td><td>HTML + CSS + JavaScript + SVG (todo incrustado)</td></tr>
+        <tr><td>Diseño</td><td>Responsive, mobile-first</td></tr>
+        <tr><td>Paleta principal</td><td><code>#0a0e1a</code> · <code>#0f172a</code> · <code>#1e3a5f</code></td></tr>
+        <tr><td>Progreso guardado</td><td>Checklist y preferencias con <code>localStorage</code></td></tr>
+      </tbody>
+    </table>
+
+    <h2>Funciones interactivas incluidas</h2>
+    <div class="grid two">
+      <div class="card">
+        <ul style="margin:0">
+          <li>Buscador con resaltado de coincidencias</li>
+          <li>Botones A− / A+ para el tamaño del texto</li>
+          <li>Modo oscuro / claro</li>
+        </ul>
+      </div>
+      <div class="card">
+        <ul style="margin:0">
+          <li>Imprimir / guardar como PDF</li>
+          <li>Barra de progreso y botón volver arriba</li>
+          <li>Checklist con progreso guardado</li>
+        </ul>
+      </div>
+    </div>
+
+    <p class="hint" style="margin-top:24px">Tutorial generado como documento único y funcional. Ábrelo directamente en el navegador, incluso sin conexión a Internet.</p>
+
+  </section>
+
+</div>
+
+<button class="to-top" id="toTop" aria-label="Volver arriba">↑</button>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============================================================
+     UTILIDADES
+     ============================================================ */
+  function $(sel, ctx){ return (ctx||document).querySelector(sel); }
+  function $all(sel, ctx){ return Array.prototype.slice.call((ctx||document).querySelectorAll(sel)); }
+  function safeGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+  function safeSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+
+  /* ============================================================
+     0. SVG HERO REUTILIZABLE
+     ============================================================
+     HOME y CRÉDITOS usan una única plantilla SVG. Cada vez que un
+     panel se muestra se genera un SVG nuevo desde texto (innerHTML),
+     con IDs únicos. El SVG fuente se elimina después de extraerlo.
+  */
+  var seq = 0, TPL = null, imgMode = false;
+  var FULL_FRAME_TIME = 4.8;
+
+  function template(){
+    if(TPL) return TPL;
+    var src = document.getElementById('svgHeroSource');
+    if(!src) return null;
+    var d = src.querySelector('defs');
+    var g = src.querySelector('#svgHero');
+    if(!d || !g) return null;
+    g.removeAttribute('id');
+    TPL = { defs:d.innerHTML, art:g.outerHTML };
+    if(src.parentNode) src.parentNode.removeChild(src);
+    return TPL;
+  }
+
+  function markup(uid){
+    var t = template();
+    if(!t) return '';
+    var s = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 260" width="100%" height="260" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false"><defs>' + t.defs + '</defs>' + t.art + '</svg>';
+    // Todos los IDs del SVG maestro reciben un sufijo único, junto con sus referencias url(#...).
+    var ids = [];
+    s.replace(/id="([^"]+)"/g, function(_, id){ if(ids.indexOf(id) < 0) ids.push(id); });
+    ids.forEach(function(id){
+      s = s.split('id="'+id+'"').join('id="'+id+'-'+uid+'"')
+           .split('url(#'+id+')').join('url(#'+id+'-'+uid+')');
+    });
+    return s;
+  }
+
+  function mountOne(m, force){
+    if(!m) return;
+    if(!force && m.firstElementChild) return;
+    m.textContent = '';
+
+    if(imgMode){
+      var im = new Image();
+      im.alt = '';
+      im.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(markup('i'+(++seq)));
+      m.appendChild(im);
+      return;
+    }
+
+    m.innerHTML = markup('h'+(++seq));
+    var svg = m.querySelector('svg');
+    if(!svg) return;
+    try{
+      svg.setCurrentTime(0);
+      svg.unpauseAnimations();
+    }catch(e){}
+
+    var t0 = 0;
+    try{ t0 = svg.getCurrentTime(); }catch(e){ t0 = 0; }
+    setTimeout(function(){
+      if(document.hidden || m.querySelector('svg') !== svg) return;
+      var rect = svg.getBoundingClientRect();
+      var now = 0;
+      try{ now = svg.getCurrentTime(); }catch(e){ now = t0; }
+      if(rect.height > 0 && now - t0 < 0.3){
+        imgMode = true;
+        mountOne(m, true);
+      }
+    },1600);
+  }
+
+  function mountActive(){
+    $all('.panel.active [data-svg-hero="true"]').forEach(function(m){ mountOne(m, true); });
+  }
+
+  function mountAllHeroes(){
+    // Para impresión/PDF: no depende de que la pestaña haya sido visitada.
+    $all('[data-svg-hero="true"]').forEach(function(m){ mountOne(m, true); });
+  }
+
+  function freezeHeroes(){
+    $all('[data-svg-hero="true"] svg').forEach(function(svg){
+      try{ svg.setCurrentTime(FULL_FRAME_TIME); svg.pauseAnimations(); }catch(e){}
+    });
+  }
+
+  function resumeHeroes(){
+    $all('[data-svg-hero="true"] svg').forEach(function(svg){
+      try{ svg.unpauseAnimations(); }catch(e){}
+    });
+  }
+
+  /* ============================================================
+     1. PESTAÑAS
+     ============================================================ */
+  var tabs = $all('.tab');
+  var panels = $all('.panel');
+
+  function activateTab(targetId, save){
+    tabs.forEach(function(t){
+      var on = t.dataset.target === targetId;
+      t.classList.toggle('active', on);
+      t.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    panels.forEach(function(p){ p.classList.toggle('active', p.id === targetId); });
+    // IMPORTANTE: el panel ya está activo antes de montar el SVG.
+    mountActive();
+    if(save !== false){ safeSet('agendaTab', targetId); }
+  }
+
+  tabs.forEach(function(t){
+    t.addEventListener('click', function(){
+      activateTab(t.dataset.target, true);
+      window.scrollTo({top:0, behavior:'smooth'});
+    });
+  });
+
+  // Hash directo, si existe, tiene prioridad sobre la pestaña guardada.
+  var initialTab = null;
+  if(location.hash && document.getElementById(location.hash.slice(1)) && document.getElementById(location.hash.slice(1)).classList.contains('panel')){
+    initialTab = location.hash.slice(1);
+  }else{
+    var savedTab = safeGet('agendaTab');
+    if(savedTab && document.getElementById(savedTab)){ initialTab = savedTab; }
+  }
+  if(initialTab){ activateTab(initialTab, false); }
+  else { mountActive(); }
+
+  window.addEventListener('hashchange', function(){
+    var id = location.hash.slice(1);
+    var panel = document.getElementById(id);
+    if(panel && panel.classList.contains('panel')) activateTab(id, false);
+  });
+
+  // Red de seguridad: cualquier vía de navegación que deje vacío el panel
+  // visible se corrige automáticamente.
+  setInterval(function(){
+    if(document.hidden) return;
+    $all('.panel.active [data-svg-hero="true"]').forEach(function(m){
+      if(!m.firstElementChild) mountOne(m, true);
+    });
+  },800);
+
+  /* ============================================================
+     2. BARRA DE PROGRESO + BOTÓN ARRIBA
+     ============================================================ */
+  var bar = $('#progressBar');
+  var toTop = $('#toTop');
+
+  function onScroll(){
+    var h = document.documentElement.scrollHeight - window.innerHeight;
+    var pct = h > 0 ? (window.scrollY / h) * 100 : 0;
+    bar.style.width = pct.toFixed(2) + '%';
+    toTop.classList.toggle('show', window.scrollY > 320);
+  }
+  window.addEventListener('scroll', onScroll, {passive:true});
+  window.addEventListener('resize', onScroll);
+  onScroll();
+
+  toTop.addEventListener('click', function(){
+    window.scrollTo({top:0, behavior:'smooth'});
+  });
+
+  /* ============================================================
+     3. TAMAÑO DE TEXTO (A− / A+)
+     ============================================================ */
+  var MIN_FS = 12, MAX_FS = 22, STEP = 1;
+  var currentFS = parseInt(safeGet('agendaFS') || '16', 10);
+  if(isNaN(currentFS)) currentFS = 16;
+
+  function applyFS(v){
+    currentFS = Math.max(MIN_FS, Math.min(MAX_FS, v));
+    document.documentElement.style.fontSize = currentFS + 'px';
+    safeSet('agendaFS', String(currentFS));
+  }
+  applyFS(currentFS);
+
+  $('#btnFontUp').addEventListener('click', function(){ applyFS(currentFS + STEP); });
+  $('#btnFontDown').addEventListener('click', function(){ applyFS(currentFS - STEP); });
+
+  /* ============================================================
+     4. TEMA CLARO / OSCURO
+     ============================================================ */
+  var btnTheme = $('#btnTheme');
+  function applyTheme(t){
+    document.body.classList.toggle('light', t === 'light');
+    safeSet('agendaTheme', t);
+    btnTheme.textContent = (t === 'light') ? '🌙 Oscuro' : '🌗 Tema';
+  }
+  applyTheme(safeGet('agendaTheme') || 'dark');
+  btnTheme.addEventListener('click', function(){
+    applyTheme(document.body.classList.contains('light') ? 'dark' : 'light');
+  });
+
+  /* ============================================================
+     5. ACORDEONES
+     ============================================================ */
+  $all('.acc-head').forEach(function(head){
+    head.addEventListener('click', function(){
+      head.parentNode.classList.toggle('open');
+    });
+  });
+
+  /* ============================================================
+     6. COPIAR AL PORTAPAPELES
+     ============================================================ */
+  function copyText(text, btn){
+    var done = function(){
+      var old = btn.textContent;
+      btn.textContent = '¡COPIADO!';
+      btn.disabled = true;
+      setTimeout(function(){ btn.textContent = old; btn.disabled = false; }, 1400);
+    };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(done).catch(function(){ fallback(); });
+    } else {
+      fallback();
+    }
+    function fallback(){
+      try{
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        ta.setAttribute('readonly','');
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        done();
+      }catch(e){
+        btn.textContent = 'ERROR';
+        setTimeout(function(){ btn.textContent = 'COPIAR'; }, 1400);
+      }
+    }
+  }
+
+  $all('.copyBtn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      copyText(btn.getAttribute('data-copy') || '', btn);
+    });
+  });
+
+  /* ============================================================
+     7. CHECKLIST CON LOCALSTORAGE
+     ============================================================ */
+  var CL_KEY = 'agendaVirtualChecklist_v1';
+  var savedChecks = {};
+  try{ savedChecks = JSON.parse(safeGet(CL_KEY) || '{}') || {}; }catch(e){ savedChecks = {}; }
+
+  var checks = $all('#checklistInicio input[type="checkbox"]');
+
+  function updateCheckProgress(){
+    var done = checks.filter(function(c){ return c.checked; }).length;
+    var el = $('#checkProgress');
+    if(el){
+      el.textContent = done === 0
+        ? 'Progreso: 0 de ' + checks.length + ' pasos marcados.'
+        : 'Progreso: ' + done + ' de ' + checks.length + ' pasos marcados (' +
+          Math.round((done/checks.length)*100) + ' %).';
+    }
+  }
+
+  checks.forEach(function(c){
+    if(savedChecks[c.dataset.id]){ c.checked = true; }
+    c.closest('.check-item').classList.toggle('done', c.checked);
+    c.addEventListener('change', function(){
+      savedChecks[c.dataset.id] = c.checked;
+      safeSet(CL_KEY, JSON.stringify(savedChecks));
+      c.closest('.check-item').classList.toggle('done', c.checked);
+      updateCheckProgress();
+    });
+  });
+  updateCheckProgress();
+
+  /* ============================================================
+     8. BUSCADOR
+     ============================================================ */
+  var searchInput = $('#searchInput');
+  var searchCount = $('#searchCount');
+  var marks = [];
+  var searchTimer = null;
+
+  function clearSearch(){
+    marks.forEach(function(m){
+      var p = m.parentNode;
+      if(!p) return;
+      p.replaceChild(document.createTextNode(m.textContent), m);
+      p.normalize();
+    });
+    marks = [];
+  }
+
+  function doSearch(q){
+    clearSearch();
+    if(!q || q.length < 2){
+      searchCount.textContent = '';
+      return;
+    }
+    var root = document.getElementById('main');
+    var nodes = [];
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode: function(n){
+        if(!n.nodeValue || !n.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+        var p = n.parentNode;
+        if(!p) return NodeFilter.FILTER_REJECT;
+        var tag = p.nodeName ? p.nodeName.toUpperCase() : '';
+        if(tag === 'SCRIPT' || tag === 'STYLE' || tag === 'MARK' ||
+           tag === 'TEXTAREA' || tag === 'INPUT') return NodeFilter.FILTER_REJECT;
+        if(p.closest && p.closest('svg')) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+    while(walker.nextNode()){ nodes.push(walker.currentNode); }
+
+    var ql = q.toLowerCase();
+    var count = 0;
+
+    nodes.forEach(function(n){
+      var txt = n.nodeValue;
+      var low = txt.toLowerCase();
+      var idx = low.indexOf(ql);
+      if(idx < 0) return;
+
+      var frag = document.createDocumentFragment();
+      var last = 0;
+      while(idx >= 0){
+        if(idx > last){ frag.appendChild(document.createTextNode(txt.slice(last, idx))); }
+        var m = document.createElement('mark');
+        m.className = 'search-hl';
+        m.textContent = txt.substr(idx, q.length);
+        frag.appendChild(m);
+        marks.push(m);
+        count++;
+        last = idx + q.length;
+        idx = low.indexOf(ql, last);
+      }
+      if(last < txt.length){ frag.appendChild(document.createTextNode(txt.slice(last))); }
+      if(n.parentNode){ n.parentNode.replaceChild(frag, n); }
+    });
+
+    // Abrir acordeones que contengan coincidencias
+    marks.forEach(function(m){
+      var acc = m.closest ? m.closest('.acc') : null;
+      if(acc){ acc.classList.add('open'); }
+    });
+
+    searchCount.textContent = count > 0
+      ? count + (count === 1 ? ' coincidencia' : ' coincidencias')
+      : 'Sin resultados';
+  }
+
+  searchInput.addEventListener('input', function(){
+    var v = searchInput.value.trim();
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(function(){ doSearch(v); }, 220);
+  });
+
+  /* ============================================================
+     9. IMPRIMIR / GUARDAR COMO PDF
+     ============================================================ */
+  var inIframe = (function(){
+    try{ return window.self !== window.top; }
+    catch(e){ return true; }
+  })();
+
+  if(inIframe){ $('#printWarn').classList.add('show'); }
+
+  function openAllAccordions(){
+    $all('.acc').forEach(function(a){ a.classList.add('open'); });
+  }
+
+  var printActiveId = null;
+
+  $('#btnPrint').addEventListener('click', function(){
+    openAllAccordions();
+    printActiveId = null;
+    panels.forEach(function(p){ if(p.classList.contains('active')) printActiveId = p.id; });
+    panels.forEach(function(p){ p.classList.add('active'); });
+    mountAllHeroes();
+    freezeHeroes();
+
+    try{
+      window.print();
+    }catch(e){
+      alert('No se pudo abrir el diálogo de impresión. Abre este archivo directamente en una pestaña del navegador e inténtalo de nuevo.');
+      panels.forEach(function(p){ p.classList.toggle('active', p.id === printActiveId); });
+      resumeHeroes();
+    }
+  });
+
+  window.addEventListener('beforeprint', function(){
+    openAllAccordions();
+    printActiveId = null;
+    panels.forEach(function(p){ if(p.classList.contains('active')) printActiveId = p.id; });
+    panels.forEach(function(p){ p.classList.add('active'); });
+    mountAllHeroes();
+    freezeHeroes();
+  });
+
+  window.addEventListener('afterprint', function(){
+    if(printActiveId){
+      panels.forEach(function(p){ p.classList.toggle('active', p.id === printActiveId); });
+    }
+    resumeHeroes();
+    mountActive();
+  });
+
+  /* ============================================================
+     10. ANCLAJES INTERNOS (índice del procedimiento)
+     ============================================================ */
+  $all('a[href^="#"]').forEach(function(a){
+    a.addEventListener('click', function(ev){
+      var id = a.getAttribute('href').slice(1);
+      var el = document.getElementById(id);
+      if(!el) return;
+      ev.preventDefault();
+      // Asegura que el panel que contiene el ancla esté activo
+      var panel = el.closest('.panel');
+      if(panel){ activateTab(panel.id, true); }
+      setTimeout(function(){
+        el.scrollIntoView({behavior:'smooth', block:'start'});
+      }, 80);
+    });
+  });
+
+})();
+</script>
+</body>
+</html>
